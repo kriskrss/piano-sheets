@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Piano Sheets</title>
+<style>
+  :root{
+    --canvas:#000000; --card:#121212; --elev:#1f1f1f; --hover:#292929;
+    --iron:#333333; --steel:#535353; --fog:#73777c; --mist:#b3b3b3;
+    --bone:#c5c5c5; --green:#1ed760; --white:#ffffff;
+    --grad:linear-gradient(90deg,#af2896,#509bf5);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--canvas); color:var(--white);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:14px; line-height:1.33; min-height:100vh;
+  }
+  /* ---------- top bar ---------- */
+  header{
+    position:sticky; top:0; z-index:20; background:var(--canvas);
+    padding:10px 16px 8px; display:flex; flex-direction:column; gap:10px;
+  }
+  .brandrow{display:flex; align-items:center; gap:10px;}
+  .logo{
+    width:34px; height:34px; border-radius:500px; background:var(--green);
+    color:#000; display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:700; flex:0 0 auto;
+  }
+  h1{font-size:24px; font-weight:700; line-height:1.2; margin:0;}
+  .brandsub{color:var(--mist); font-size:12px; margin-left:auto; text-align:right;}
+  /* piano switch: segmented pill */
+  .seg{
+    display:flex; background:var(--elev); border-radius:9999px; padding:3px; gap:3px;
+  }
+  .seg button{
+    flex:1; border:0; background:transparent; color:var(--mist); cursor:pointer;
+    font:inherit; font-weight:700; font-size:13px; padding:8px 10px; border-radius:9999px;
+  }
+  .seg button.active{background:var(--white); color:#000;}
+  .seg.small button{font-size:12px; padding:6px 8px;}
+  .search{
+    display:flex; align-items:center; gap:8px; background:var(--elev);
+    border-radius:500px; padding:9px 14px;
+  }
+  .search span{color:var(--bone); font-size:14px;}
+  .search input{
+    flex:1; background:transparent; border:0; outline:0; color:var(--white);
+    font:inherit; font-size:14px; min-width:0;
+  }
+  .search input::placeholder{color:var(--bone);}
+  /* ---------- sections & cards ---------- */
+  main{padding:6px 16px 48px; max-width:1100px; margin:0 auto;}
+  section{margin-top:26px;}
+  .sechead{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px;}
+  .sechead h2{font-size:24px; font-weight:700; line-height:1.2; margin:0;}
+  .sechead .count{color:var(--mist); font-size:12px;}
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+  @media (min-width:640px){ .grid{grid-template-columns:repeat(3,1fr);} }
+  @media (min-width:960px){ .grid{grid-template-columns:repeat(4,1fr);} }
+  .card{
+    background:var(--card); border-radius:6px; padding:12px; cursor:pointer;
+    border:0; text-align:left; color:var(--white); font:inherit; width:100%;
+  }
+  .card:hover,.card:active{background:var(--hover);}
+  .tile{
+    position:relative; border-radius:6px; aspect-ratio:1/1; margin-bottom:10px;
+    background:var(--elev); display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .tile.movie{background:var(--grad);}
+  .tile .glyph{font-size:52px; font-weight:700; line-height:1; color:var(--white);}
+  .tile .glyph.dim{color:var(--steel);}
+  .playbtn{
+    position:absolute; right:8px; bottom:8px; width:38px; height:38px;
+    border-radius:500px; background:var(--green); color:#000; border:0;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+    box-shadow:rgba(0,0,0,.5) 0 8px 24px 0;
+  }
+  .cardtitle{font-size:14px; font-weight:600; line-height:1.25; margin:0 0 2px;}
+  .cardsub{color:var(--mist); font-size:12px; margin:0;}
+  .empty{color:var(--mist); padding:24px 0; text-align:center;}
+  /* ---------- focus view ---------- */
+  #focus{
+    position:fixed; inset:0; z-index:40; background:var(--canvas);
+    overflow-y:auto; display:none; padding:0 16px 40px;
+  }
+  #focus.open{display:block;}
+  .fbar{
+    position:sticky; top:0; background:var(--canvas); z-index:5;
+    display:flex; align-items:center; gap:10px; padding:10px 0 8px;
+  }
+  .roundbtn{
+    width:36px; height:36px; border-radius:9999px; border:0; cursor:pointer;
+    background:var(--elev); color:var(--white); font-size:17px; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fbar .ftitle{font-size:16px; font-weight:700; flex:1; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .fbar .seg{flex:0 0 auto;}
+  .fgroup{color:var(--green); font-size:12px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em; margin:8px 0 2px;}
+  #focus h2{font-size:24px; font-weight:700; margin:0 0 6px; line-height:1.2;}
+  .startbox{
+    background:var(--card); border-radius:6px; padding:12px; color:var(--bone);
+    font-size:13px; line-height:1.5; margin:12px 0 4px; white-space:pre-line;
+  }
+  /* keyboard strip */
+  .kbwrap{margin:14px 0 4px;}
+  .kb{position:relative; display:flex; height:74px; user-select:none;}
+  .wkey{
+    flex:1; background:var(--white); border:1px solid var(--iron);
+    border-radius:0 0 4px 4px; position:relative;
+  }
+  .wkey.start{background:var(--green);}
+  .wkey .lab{
+    position:absolute; bottom:4px; left:0; right:0; text-align:center;
+    font-size:10px; font-weight:700; color:#000;
+  }
+  .wkey.start .lab{color:#000;}
+  .bkey{
+    position:absolute; top:0; height:44px; background:#000;
+    border:1px solid var(--iron); border-radius:0 0 3px 3px; z-index:2;
+    transform:translateX(-50%);
+  }
+  .kbcaption{display:flex; justify-content:space-between; color:var(--fog);
+    font-size:11px; margin-top:5px;}
+  .kbcaption .midc{color:var(--green); font-weight:700;}
+  /* notes */
+  .notes{margin-top:16px;}
+  .nline{margin:0 0 18px;}
+  .nrow{line-height:1.35;}
+  .tok{
+    display:inline-block; font-weight:700; color:var(--white);
+    font-size:clamp(24px,6.4vw,44px); margin:0 .18em 0 0; letter-spacing:.01em;
+  }
+  .tok.sep{color:var(--steel); font-weight:400;}
+  .tok.cur{background:var(--green); color:#000; border-radius:6px; padding:0 .12em;}
+  .tok.done{color:var(--fog);}
+  .lyric{color:var(--mist); font-size:13px; margin-top:2px; min-height:16px;}
+  .tip{
+    background:var(--card); border-radius:6px; padding:12px; color:var(--mist);
+    font-size:13px; line-height:1.5; margin-top:6px; white-space:pre-line;
+  }
+  /* focus controls */
+  .fcontrols{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;}
+  .pill{
+    border-radius:9999px; border:0; cursor:pointer; font:inherit; font-weight:700;
+    font-size:14px; padding:10px 18px; background:var(--white); color:#000;
+  }
+  .pill.green{background:var(--green);}
+  .ghost{
+    border-radius:9999px; border:0; cursor:pointer; font:inherit; font-weight:700;
+    font-size:14px; padding:10px 16px; background:transparent; color:var(--mist);
+  }
+  .ghost:active,.ghost:hover{color:var(--white);}
+  .navrow{display:flex; justify-content:space-between; margin-top:28px;
+    border-top:1px solid var(--iron); padding-top:14px;}
+  .progress{color:var(--fog); font-size:12px; align-self:center;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brandrow">
+    <div class="logo">&#9834;</div>
+    <h1>Piano Sheets</h1>
+    <div class="brandsub">One finger tunes<br>for the piano</div>
+  </div>
+  <div class="seg" id="pianoSeg" role="tablist" aria-label="Choose your piano">
+    <button data-piano="gig" class="active">Gigglescape</button>
+    <button data-piano="casio">Casio CT-X700</button>
+  </div>
+  <label class="search"><span>&#128269;</span>
+    <input id="searchInput" type="search" placeholder="Search tunes" autocomplete="off">
+  </label>
+</header>
+<main id="home"></main>
+
+<div id="focus" aria-live="polite">
+  <div class="fbar">
+    <button class="roundbtn" id="backBtn" aria-label="Back to all tunes">&#8592;</button>
+    <div class="ftitle" id="fTitle"></div>
+    <div class="seg small" id="pianoSegFocus">
+      <button data-piano="gig">Gigglescape</button>
+      <button data-piano="casio">Casio</button>
+    </div>
+  </div>
+  <div class="fgroup" id="fGroup"></div>
+  <h2 id="fName"></h2>
+  <div class="startbox" id="fStart"></div>
+  <div class="kbwrap">
+    <div class="kb" id="fKb"></div>
+    <div class="kbcaption"><span id="kbLeft"></span><span class="midc" id="kbMid"></span><span id="kbRight"></span></div>
+  </div>
+  <div class="notes" id="fNotes"></div>
+  <div class="tip" id="fTip"></div>
+  <div class="fcontrols">
+    <button class="pill green" id="followBtn">Follow along</button>
+    <button class="pill" id="nextNoteBtn" style="display:none">Next note</button>
+    <button class="ghost" id="resetBtn" style="display:none">Start over</button>
+    <button class="ghost" id="wakeBtn">Keep screen on</button>
+  </div>
+  <div class="navrow">
+    <button class="ghost" id="prevTune">&#8592; Prev tune</button>
+    <div class="progress" id="fProgress"></div>
+    <button class="ghost" id="nextTune">Next tune &#8594;</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ DATA ============
+   Lines: [notes, lyric]. Notes are space separated tokens.
+   gig  = Gigglescape toy piano, 15 white keys C..C, letters as printed.
+          C+ = the next C up, G- = the G just below the start C of that tune.
+   casio = Casio CT-X700, scientific names, middle C = C4.
+*/
+const GROUPS = ["Movie themes","Toddler rhymes - Set 1","Toddler rhymes - Set 2"];
+const TUNES = [
+{ id:"interstellar", title:"Interstellar - Main Theme", group:"Movie themes", glyph:"&#9834;",
+  tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
+  gig:{ startKey:4, start:"Work in the middle of the piano.\nPlay the low note once, then its pattern. Slow and steady, one note per beat.\nThe note you keep coming back to is E, the 10th white key.",
+    lines:[["F | A E A E",""],["G | B E B E",""],["A | C E C E",""],["G | D E D E",""],["F G A G","the turn, above the E"]] },
+  casio:{ startKey:4, start:"The low notes are F3, G3 and A3, below middle C (C4).\nThe note you keep coming back to is E5. The pattern notes climb A4, B4, C5, D5 under it.\nPlay the low note once, then its pattern. Slow and steady.",
+    lines:[["F3 | A4 E5 A4 E5",""],["G3 | B4 E5 B4 E5",""],["A3 | C5 E5 C5 E5",""],["G3 | D5 E5 D5 E5",""],["F5 G5 A5 G5","the turn"]] } },
+{ id:"hedwig", title:"Harry Potter - Hedwig's Theme", group:"Movie themes", glyph:"&#9834;",
+  tip:"This is the famous opening, simplified to one finger. Sharps (#) are black keys: the black key just after the letter key.\nPlay it slowly. The tune sounds best unhurried.",
+  gig:{ startKey:3, start:"Start on the first E, the 3rd white key.\nC+ is the middle C (8th white key). Notes with + are in the higher half.\nD# is the black key just before the second E. F# is the black key just before the higher G.",
+    lines:[["E A C+ B A","the famous opening"],["E+ D# B+ A+",""],["B E+ G+ F# E+",""],["B+ A+ F#",""],["E+ G+ F# D+ F+ B",""]] },
+  casio:{ startKey:7, start:"Start on B3, the B just below middle C (C4).\nSharps (#) are black keys: the black key just after the letter key.\nThis is the fuller version. The Casio has the range for all of it.",
+    lines:[["B3 E4 G4 F#4 E4 B4 A4 F#4",""],["E4 G4 F#4 D4 F4 B3",""],["B3 E4 G4 F#4 E4 B4 D5 C#5 C5",""],["G#4 C5 B4 A#4",""],["G4 E4 E4 B4 G4 B4 G4 C5",""],["B4 A#4 F#4 G4 B4 A#4 A#3",""],["C4 B3 G4 G4 B4 G4 B4 G4 D5",""],["C#5 C5 G#4 C5 B4 A#4 E4 E4",""]] } },
+{ id:"twinkle", title:"Twinkle, Twinkle, Little Star", group:"Toddler rhymes - Set 1", glyph:"T",
+  tip:"The ABC song and Baa, Baa, Black Sheep use this same tune.",
+  gig:{ startKey:1, start:"Start on the left C, the very first white key.",
+    lines:[["C C G G A A G","Twin-kle, twin-kle, lit-tle star"],["F F E E D D C","How I won-der what you are"],["G G F F E E D","Up a-bove the world so high"],["G G F F E E D","Like a dia-mond in the sky"],["C C G G A A G","Twin-kle, twin-kle, lit-tle star"],["F F E E D D C","How I won-der what you are"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). All of this tune sits in the C4 to A4 range.",
+    lines:[["C4 C4 G4 G4 A4 A4 G4","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4","How I won-der what you are"],["G4 G4 F4 F4 E4 E4 D4","Up a-bove the world so high"],["G4 G4 F4 F4 E4 E4 D4","Like a dia-mond in the sky"],["C4 C4 G4 G4 A4 A4 G4","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4","How I won-der what you are"]] } },
+{ id:"mary", title:"Mary Had a Little Lamb", group:"Toddler rhymes - Set 1", glyph:"M",
+  tip:"Hold the last C a little longer.",
+  gig:{ startKey:3, start:"Start on the left C. The first note is E, the 3rd white key.",
+    lines:[["E D C D","Ma-ry had a"],["E E E","lit-tle lamb"],["D D D","lit-tle lamb"],["E G G","lit-tle lamb"],["E D C D","Ma-ry had a"],["E E E E","lit-tle lamb, lit-tle"],["D D E D","lamb, Ma-ry"],["C","had a lit-tle lamb (hold)"]] },
+  casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4.",
+    lines:[["E4 D4 C4 D4","Ma-ry had a"],["E4 E4 E4","lit-tle lamb"],["D4 D4 D4","lit-tle lamb"],["E4 G4 G4","lit-tle lamb"],["E4 D4 C4 D4","Ma-ry had a"],["E4 E4 E4 E4","lit-tle lamb, lit-tle"],["D4 D4 E4 D4","lamb, Ma-ry"],["C4","had a lit-tle lamb (hold)"]] } },
+{ id:"hotcross", title:"Hot Cross Buns", group:"Toddler rhymes - Set 1", glyph:"H",
+  tip:"Only three notes in the whole song: E, D and C.",
+  gig:{ startKey:3, start:"Start on the left C. The first note is E, the 3rd white key.",
+    lines:[["E D C","Hot cross buns"],["E D C","Hot cross buns"],["C C C C D D D D","One a pen-ny, two a pen-ny"],["E D C","Hot cross buns"]] },
+  casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4.",
+    lines:[["E4 D4 C4","Hot cross buns"],["E4 D4 C4","Hot cross buns"],["C4 C4 C4 C4 D4 D4 D4 D4","One a pen-ny, two a pen-ny"],["E4 D4 C4","Hot cross buns"]] } },
+{ id:"oldmac", title:"Old MacDonald Had a Farm", group:"Toddler rhymes - Set 1", glyph:"O",
+  tip:"These are the main two lines. Repeat them for every animal.",
+  gig:{ startKey:1, start:"Start on the left C, the very first white key.",
+    lines:[["C C C G A A G","Old Mac-Don-ald had a farm"],["E E D D C","Ee i ee i o"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4).",
+    lines:[["C4 C4 C4 G4 A4 A4 G4","Old Mac-Don-ald had a farm"],["E4 E4 D4 D4 C4","Ee i ee i o"]] } },
+{ id:"londonbridge", title:"London Bridge Is Falling Down", group:"Toddler rhymes - Set 1", glyph:"L",
+  tip:"",
+  gig:{ startKey:5, start:"Start on the left C. The first note is G, the 5th white key.",
+    lines:[["G A G F E F G","Lon-don Bridge is fall-ing down"],["D E F E F G","fall-ing down, fall-ing down"],["G A G F E F G","Lon-don Bridge is fall-ing down"],["D G E C","my fair la-dy"]] },
+  casio:{ startKey:12, start:"Start around middle C (C4). The first note is G4.",
+    lines:[["G4 A4 G4 F4 E4 F4 G4","Lon-don Bridge is fall-ing down"],["D4 E4 F4 E4 F4 G4","fall-ing down, fall-ing down"],["G4 A4 G4 F4 E4 F4 G4","Lon-don Bridge is fall-ing down"],["D4 G4 E4 C4","my fair la-dy"]] } },
+{ id:"rowboat", title:"Row, Row, Row Your Boat", group:"Toddler rhymes - Set 1", glyph:"R",
+  tip:"C+ is the middle C, the 8th white key.",
+  gig:{ startKey:1, start:"Start on the left C, the very first white key.\nC+ is the middle C, the 8th white key.",
+    lines:[["C C C D E","Row, row, row your boat"],["E D E F G","gent-ly down the stream"],["C+ C+ C+ G G G","Mer-ri-ly, mer-ri-ly, mer-ri-ly, mer-ri-ly"],["E E E C C C",""],["G F E D C","life is but a dream"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). The high C in line 3 is C5.",
+    lines:[["C4 C4 C4 D4 E4","Row, row, row your boat"],["E4 D4 E4 F4 G4","gent-ly down the stream"],["C5 C5 C5 G4 G4 G4","Mer-ri-ly, mer-ri-ly, mer-ri-ly, mer-ri-ly"],["E4 E4 E4 C4 C4 C4",""],["G4 F4 E4 D4 C4","life is but a dream"]] } },
+{ id:"wheels", title:"The Wheels on the Bus", group:"Toddler rhymes - Set 1", glyph:"W",
+  tip:"C+ is the middle C, the 8th white key.",
+  gig:{ startKey:1, start:"Start on the left C, the very first white key.\nC+ is the middle C, the 8th white key.",
+    lines:[["C F F F F","The wheels on the bus go"],["A C+ A F","round and round"],["G E C","round and round"],["A G F","round and round"],["C F F F F","The wheels on the bus go"],["A C+ A F","round and round"],["G C C F","all through the town"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). The high C is C5.",
+    lines:[["C4 F4 F4 F4 F4","The wheels on the bus go"],["A4 C5 A4 F4","round and round"],["G4 E4 C4","round and round"],["A4 G4 F4","round and round"],["C4 F4 F4 F4 F4","The wheels on the bus go"],["A4 C5 A4 F4","round and round"],["G4 C4 C4 F4","all through the town"]] } },
+{ id:"sleeping", title:"Are You Sleeping? (Brother John)", group:"Toddler rhymes - Set 1", glyph:"A",
+  tip:"G- is the G just left of the middle C.",
+  gig:{ startKey:8, start:"Start on the middle C, the 8th white key.\nG- is the G just left of the middle C.",
+    lines:[["C D E C","Are you sleep-ing?"],["C D E C","Are you sleep-ing?"],["E F G","Bro-ther John"],["E F G","Bro-ther John"],["G A G F E C","Morn-ing bells are ring-ing"],["G A G F E C","Morn-ing bells are ring-ing"],["C G- C","Ding ding dong"],["C G- C","Ding ding dong"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). G3 is the G just below it.",
+    lines:[["C4 D4 E4 C4","Are you sleep-ing?"],["C4 D4 E4 C4","Are you sleep-ing?"],["E4 F4 G4","Bro-ther John"],["E4 F4 G4","Bro-ther John"],["G4 A4 G4 F4 E4 C4","Morn-ing bells are ring-ing"],["G4 A4 G4 F4 E4 C4","Morn-ing bells are ring-ing"],["C4 G3 C4","Ding ding dong"],["C4 G3 C4","Ding ding dong"]] } },
+{ id:"lassie", title:"Did You Ever See a Lassie?", group:"Toddler rhymes - Set 2", glyph:"D",
+  tip:"This is a dancing game. A child stands in the middle and does an action on \"this way and that\", and everyone copies.\nSecond verse: Laddie. Same notes.",
+  gig:{ startKey:8, start:"Start on the middle C, the 8th white key.\nC+ here is the top C, the last white key. G- is the G just left of the middle C.",
+    lines:[["C E G A G F","Did you ev-er see a las-sie"],["E C C - D G- G-","a las-sie, a las-sie"],["E C C E - G A G F","Did you ev-er see a las-sie go"],["E C C - D G- G-","this way and that? Go"],["C","this way and that (hold)"],["C D G- G-","Go this way and that way"],["E C C - D G- G-","and this way and that way"],["E C C E - G A G F","Did you ev-er see a las-sie go"],["E C C - D G- G-","this way and that?"],["C","(hold)"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). G3 is the G just below it.",
+    lines:[["C4 E4 G4 A4 G4 F4","Did you ev-er see a las-sie"],["E4 C4 C4 D4 G3 G3","a las-sie, a las-sie"],["E4 C4 C4 E4 G4 A4 G4 F4","Did you ev-er see a las-sie go"],["E4 C4 C4 D4 G3 G3","this way and that? Go"],["C4","this way and that (hold)"],["C4 D4 G3 G3","Go this way and that way"],["E4 C4 C4 D4 G3 G3","and this way and that way"],["E4 C4 C4 E4 G4 A4 G4 F4","Did you ev-er see a las-sie go"],["E4 C4 C4 D4 G3 G3","this way and that?"],["C4","(hold)"]] } },
+{ id:"itsy", title:"The Itsy Bitsy Spider", group:"Toddler rhymes - Set 2", glyph:"I",
+  tip:"G- is the G just left of the middle C.",
+  gig:{ startKey:8, start:"Start on the middle C, the 8th white key.\nG- is the G just left of the middle C.",
+    lines:[["C C C D E E E D C D E C","The it-sy bit-sy spi-der went up the wa-ter spout"],["E E F G G F E F G E","Down came the rain and washed the spi-der out"],["C C D E E E D C D E C","Out came the sun and dried up all the rain"],["G- G- C C C D E E E D","And the it-sy bit-sy spi-der"],["C D E C","went up the spout a-gain"]] },
+  casio:{ startKey:8, start:"Start on middle C (C4). G3 is the G just below it.",
+    lines:[["C4 C4 C4 D4 E4 E4 E4 D4 C4 D4 E4 C4","The it-sy bit-sy spi-der went up the wa-ter spout"],["E4 E4 F4 G4 G4 F4 E4 F4 G4 E4","Down came the rain and washed the spi-der out"],["C4 C4 D4 E4 E4 E4 D4 C4 D4 E4 C4","Out came the sun and dried up all the rain"],["G3 G3 C4 C4 C4 D4 E4 E4 E4 D4","And the it-sy bit-sy spi-der"],["C4 D4 E4 C4","went up the spout a-gain"]] } },
+{ id:"threeblind", title:"Three Blind Mice", group:"Toddler rhymes - Set 2", glyph:"3",
+  tip:"C+ is the top C, the last white key. Sing the last part slowly.",
+  gig:{ startKey:10, start:"Start on the middle C, the 8th white key. The first note is E, the 10th white key.\nC+ is the top C, the last white key.",
+    lines:[["E D C","Three blind mice"],["E D C","Three blind mice"],["G F F E","See how they run"],["G F F E","See how they run"],["G C+ C+ B","They all ran af-ter the"],["A B C+","far-mer's wife"],["G G G C+ C+","Who cut off their tails with a"],["B A B C+","carv-ing knife"],["G G G F","Did you ev-er see such a"],["E D C","sight in your life (sing slowly)"],["C+","Three blind mice (hold)"]] },
+  casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4. The high C is C5.",
+    lines:[["E4 D4 C4","Three blind mice"],["E4 D4 C4","Three blind mice"],["G4 F4 F4 E4","See how they run"],["G4 F4 F4 E4","See how they run"],["G4 C5 C5 B4","They all ran af-ter the"],["A4 B4 C5","far-mer's wife"],["G4 G4 G4 C5 C5","Who cut off their tails with a"],["B4 A4 B4 C5","carv-ing knife"],["G4 G4 G4 F4","Did you ev-er see such a"],["E4 D4 C4","sight in your life (sing slowly)"],["C5","Three blind mice (hold)"]] } },
+{ id:"farmer", title:"The Farmer in the Dell", group:"Toddler rhymes - Set 2", glyph:"F",
+  tip:"Same notes for every verse: the wife, the child, the nurse, the dog, the cat, the mouse, the cheese.",
+  gig:{ startKey:7, start:"The first note is G-, the G just left of the middle C. The rest sits around the middle C.",
+    lines:[["G- C C C C C","The far-mer in the dell"],["D E E E E E","The far-mer in the dell"],["G G A G F C","Heigh-ho the der-ry-o"],["C E E D D C","The far-mer in the dell"]] },
+  casio:{ startKey:5, start:"The first note is G3, the G just below middle C (C4). The rest sits around C4.",
+    lines:[["G3 C4 C4 C4 C4 C4","The far-mer in the dell"],["D4 E4 E4 E4 E4 E4","The far-mer in the dell"],["G4 G4 A4 G4 F4 C4","Heigh-ho the der-ry-o"],["C4 E4 E4 D4 D4 C4","The far-mer in the dell"]] } },
+{ id:"rainrain", title:"Rain, Rain, Go Away", group:"Toddler rhymes - Set 2", glyph:"R",
+  tip:"",
+  gig:{ startKey:12, start:"Start on the middle C, the 8th white key. The first note is the G above it, the 12th white key.",
+    lines:[["G E G G E","Rain, rain, go a-way"],["G G E A G G E","Come a-gain a-no-ther day"],["F F D D F F D","Lit-tle ones want to play"],["G F E D E C C","Rain, rain, go a-way"]] },
+  casio:{ startKey:12, start:"Start around middle C (C4). The first note is G4, above it.",
+    lines:[["G4 E4 G4 G4 E4","Rain, rain, go a-way"],["G4 G4 E4 A4 G4 G4 E4","Come a-gain a-no-ther day"],["F4 F4 D4 D4 F4 F4 D4","Lit-tle ones want to play"],["G4 F4 E4 D4 E4 C4 C4","Rain, rain, go a-way"]] } },
+{ id:"hickory", title:"Hickory Dickory Dock", group:"Toddler rhymes - Set 2", glyph:"H",
+  tip:"",
+  gig:{ startKey:10, start:"Start on the middle C, the 8th white key. The first note is E, the 10th white key.",
+    lines:[["E F G F E D E","Hick-o-ry dick-o-ry dock"],["E G F D E E","The mouse ran up the clock"],["E E E G G F F A","The clock struck one, the mouse ran down"],["G A G F E D C","Hick-o-ry dick-o-ry dock"]] },
+  casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4.",
+    lines:[["E4 F4 G4 F4 E4 D4 E4","Hick-o-ry dick-o-ry dock"],["E4 G4 F4 D4 E4 E4","The mouse ran up the clock"],["E4 E4 E4 G4 G4 F4 F4 A4","The clock struck one, the mouse ran down"],["G4 A4 G4 F4 E4 D4 C4","Hick-o-ry dick-o-ry dock"]] } }
+];
+/* ============ STATE ============ */
+const PIANO_NAMES = { gig:"Gigglescape toy piano", casio:"Casio CT-X700" };
+let piano = localStorage.getItem("pianoSheetsPiano") || "gig";
+if(!PIANO_NAMES[piano]) piano = "gig";
+let currentId = null, follow = false, noteIdx = -1, wakeLock = null;
+
+const $ = s => document.querySelector(s);
+const homeEl = $("#home"), focusEl = $("#focus");
+
+function variant(t){ return t[piano]; }
+function firstNoteLabel(t){
+  const v = variant(t);
+  const toks = v.lines[0][0].split(/\s+/).filter(x=>x && x!=="|" && x!=="-");
+  return "Starts on " + (toks[0]||"");
+}
+function syncSegs(){
+  document.querySelectorAll("#pianoSeg button, #pianoSegFocus button").forEach(b=>{
+    b.classList.toggle("active", b.dataset.piano===piano);
+  });
+}
+function setPiano(p){
+  piano = p; localStorage.setItem("pianoSheetsPiano", p);
+  syncSegs(); renderHome($("#searchInput").value||"");
+  if(currentId) renderFocus(false);
+}
+document.querySelectorAll("#pianoSeg button, #pianoSegFocus button").forEach(b=>{
+  b.addEventListener("click", ()=> setPiano(b.dataset.piano));
+});
+$("#searchInput").addEventListener("input", e=> renderHome(e.target.value));
+
+function renderHome(filter){
+  const f = (filter||"").trim().toLowerCase();
+  homeEl.innerHTML = "";
+  let any = false;
+  GROUPS.forEach(g=>{
+    const tunes = TUNES.filter(t=>t.group===g && (!f || t.title.toLowerCase().includes(f)));
+    if(!tunes.length) return;
+    any = true;
+    const sec = document.createElement("section");
+    const head = document.createElement("div");
+    head.className = "sechead";
+    head.innerHTML = "<h2></h2><div class='count'></div>";
+    head.querySelector("h2").textContent = g.replace("Toddler rhymes - ","");
+    head.querySelector(".count").textContent = tunes.length + (tunes.length===1?" tune":" tunes");
+    sec.appendChild(head);
+    const grid = document.createElement("div"); grid.className = "grid";
+    tunes.forEach(t=>{
+      const card = document.createElement("button");
+      card.className = "card";
+      const movie = t.group==="Movie themes";
+      card.innerHTML =
+        "<div class='tile"+(movie?" movie":"")+"'><div class='glyph"+(movie?"":" dim")+"'>"+t.glyph+"</div>"+
+        "<div class='playbtn'>&#9654;</div></div>"+
+        "<p class='cardtitle'></p><p class='cardsub'></p>";
+      card.querySelector(".cardtitle").textContent = t.title;
+      card.querySelector(".cardsub").textContent = firstNoteLabel(t) + " - " + PIANO_NAMES[piano];
+      card.addEventListener("click", ()=> openTune(t.id));
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    homeEl.appendChild(sec);
+  });
+  if(!any){
+    const d = document.createElement("div");
+    d.className = "empty"; d.textContent = "No tunes match that search.";
+    homeEl.appendChild(d);
+  }
+}
+/* keyboard strip: whites from C. gig = 15 whites (C..C), casio window = 17 whites (C..E) with middle C at index 8 */
+function buildKeyboard(v){
+  const kb = $("#fKb"); kb.innerHTML = "";
+  const whites = piano==="gig" ? 15 : 17;
+  const letters = ["C","D","E","F","G","A","B"];
+  const blackAfter = {C:1,D:1,F:1,G:1,A:1};
+  for(let i=1;i<=whites;i++){
+    const letter = letters[(i-1)%7];
+    const w = document.createElement("div");
+    w.className = "wkey" + (i===v.startKey ? " start" : "");
+    if(piano==="casio" && i===8){ w.innerHTML = "<div class='lab'>C4</div>"; }
+    kb.appendChild(w);
+    if(blackAfter[letter] && i<whites){
+      const b = document.createElement("div");
+      b.className = "bkey";
+      b.style.left = (i/whites*100) + "%";
+      b.style.width = (100/whites*0.62) + "%";
+      kb.appendChild(b);
+    }
+  }
+  $("#kbLeft").textContent = piano==="gig" ? "Left C" : "C3";
+  $("#kbMid").textContent = piano==="gig" ? "Middle C is the 8th white key" : "Middle C = C4";
+  $("#kbRight").textContent = piano==="gig" ? "Top C" : "E5";
+}
+function openTune(id){
+  currentId = id; follow = false; noteIdx = -1;
+  renderFocus(true);
+  focusEl.scrollTop = 0;
+}
+function renderFocus(scroll){
+  const t = TUNES.find(x=>x.id===currentId);
+  if(!t) return;
+  const v = variant(t);
+  focusEl.classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#fTitle").textContent = t.title;
+  $("#fGroup").textContent = t.group + " - " + PIANO_NAMES[piano];
+  $("#fName").textContent = t.title;
+  $("#fStart").textContent = v.start;
+  buildKeyboard(v);
+  const notesEl = $("#fNotes"); notesEl.innerHTML = "";
+  v.lines.forEach(line=>{
+    const wrap = document.createElement("div"); wrap.className = "nline";
+    const row = document.createElement("div"); row.className = "nrow";
+    line[0].split(/\s+/).forEach(tok=>{
+      if(!tok) return;
+      const s = document.createElement("span");
+      s.className = "tok" + ((tok==="|"||tok==="-") ? " sep" : "");
+      s.textContent = tok;
+      if(!(tok==="|"||tok==="-")) s.dataset.note = "1";
+      row.appendChild(s);
+    });
+    wrap.appendChild(row);
+    const ly = document.createElement("div"); ly.className = "lyric";
+    ly.textContent = line[1]||"";
+    wrap.appendChild(ly);
+    notesEl.appendChild(wrap);
+  });
+  const tipEl = $("#fTip");
+  if(t.tip){ tipEl.style.display="block"; tipEl.textContent = t.tip; }
+  else tipEl.style.display = "none";
+  const idx = TUNES.indexOf(t);
+  $("#fProgress").textContent = (idx+1) + " of " + TUNES.length;
+  updateFollowUI();
+  if(scroll) focusEl.scrollTop = 0;
+}
+function noteSpans(){
+  return Array.from(document.querySelectorAll("#fNotes .tok[data-note]"));
+}
+function updateFollowUI(){
+  $("#followBtn").style.display = follow ? "none" : "";
+  $("#nextNoteBtn").style.display = follow ? "" : "none";
+  $("#resetBtn").style.display = follow ? "" : "none";
+  if(follow) paintNotes();
+}
+function paintNotes(){
+  const spans = noteSpans();
+  spans.forEach((s,i)=>{
+    s.classList.toggle("cur", i===noteIdx);
+    s.classList.toggle("done", noteIdx>=0 && i<noteIdx);
+  });
+  const cur = spans[noteIdx];
+  if(cur) cur.scrollIntoView({block:"nearest", behavior:"smooth"});
+  $("#nextNoteBtn").textContent = noteIdx >= spans.length-1 ? "Done - tap to restart" : "Next note";
+}
+function stepNote(){
+  const spans = noteSpans();
+  if(noteIdx >= spans.length-1){ noteIdx = -1; }
+  else noteIdx++;
+  paintNotes();
+}
+$("#followBtn").addEventListener("click", ()=>{ follow = true; noteIdx = 0; updateFollowUI(); });
+$("#nextNoteBtn").addEventListener("click", stepNote);
+$("#resetBtn").addEventListener("click", ()=>{ follow = false; noteIdx = -1;
+  noteSpans().forEach(s=>s.classList.remove("cur","done")); updateFollowUI(); });
+$("#fNotes").addEventListener("click", ()=>{ if(follow) stepNote(); });
+function closeFocus(){
+  focusEl.classList.remove("open");
+  document.body.style.overflow = "";
+  currentId = null;
+  if(wakeLock){ try{ wakeLock.release(); }catch(e){} wakeLock = null; $("#wakeBtn").textContent = "Keep screen on"; }
+}
+$("#backBtn").addEventListener("click", closeFocus);
+function stepTune(d){
+  if(!currentId) return;
+  const i = TUNES.findIndex(x=>x.id===currentId);
+  const n = (i + d + TUNES.length) % TUNES.length;
+  currentId = TUNES[n].id; follow = false; noteIdx = -1;
+  renderFocus(true);
+}
+$("#prevTune").addEventListener("click", ()=>stepTune(-1));
+$("#nextTune").addEventListener("click", ()=>stepTune(1));
+$("#wakeBtn").addEventListener("click", async ()=>{
+  if(wakeLock){ try{ await wakeLock.release(); }catch(e){} wakeLock = null;
+    $("#wakeBtn").textContent = "Keep screen on"; return; }
+  try{
+    wakeLock = await navigator.wakeLock.request("screen");
+    $("#wakeBtn").textContent = "Screen stays on - tap to release";
+    wakeLock.addEventListener("release", ()=>{ wakeLock = null; $("#wakeBtn").textContent = "Keep screen on"; });
+  }catch(e){ $("#wakeBtn").textContent = "Screen lock not available here"; }
+});
+document.addEventListener("keydown", e=>{
+  if(!currentId) return;
+  if(e.key==="Escape") closeFocus();
+  if(follow && (e.key===" " || e.key==="ArrowRight")){ e.preventDefault(); stepNote(); }
+});
+syncSegs();
+renderHome("");
+</script>
+</body>
+</html>
