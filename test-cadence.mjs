@@ -1,0 +1,64 @@
+// Cadence regression test: tunes must encode rhythm, not one beat per note.
+// Run: node test-cadence.mjs
+import { readFileSync } from "node:fs";
+import assert from "node:assert";
+
+const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
+
+// Every tune declares a tempo
+const bpms = [...html.matchAll(/bpm:\s*(\d+)/g)].map(m => +m[1]);
+assert.ok(bpms.length >= 16, `expected >=16 tunes with bpm, got ${bpms.length}`);
+assert.ok(bpms.every(b => b >= 40 && b <= 200), "bpm out of range");
+
+// Tokens may carry :beats suffix, e.g. G:2 or C:0.5 ; separators are | and -
+function tuneBlock(id) {
+  const i = html.indexOf(`id:"${id}"`);
+  assert.ok(i >= 0, `tune ${id} missing`);
+  const next = html.indexOf('{ id:"', i + 1);
+  return html.slice(i, next < 0 ? html.length : next);
+}
+function noteTokens(block) {
+  const out = [];
+  for (const m of block.matchAll(/\["([^"]*)","[^"]*"\]/g)) {
+    {
+      for (const tok of m[1].split(/\s+/).filter(Boolean)) {
+        if (tok === "|" || tok === "-") continue;
+        const mm = tok.match(/^([A-G][#b]?[+-]?\d?|[A-G][#b]?\d?)(?::(\d+(?:\.\d+)?))?$/);
+        assert.ok(mm, `unparseable note token ${tok}`);
+        out.push({ pitch: mm[1], beats: mm[2] ? +mm[2] : 1 });
+      }
+    }
+  }
+  return out;
+}
+
+// Twinkle: phrase-final notes are held twice as long; pitches unchanged
+const tw = noteTokens(tuneBlock("twinkle"));
+assert.deepEqual(tw.slice(0, 7).map(n => n.pitch.replace(/\d/g, "")), ["C","C","G","G","A","A","G"]);
+assert.equal(tw[6].beats, 2, "Twinkle line 1 final G must be held 2 beats");
+assert.ok(tw.some(n => n.beats !== 1), "Twinkle must not be uniform beats");
+
+// Mary: explicit final hold
+const mary = noteTokens(tuneBlock("mary"));
+assert.equal(mary[mary.length - 1].beats, 3, "Mary final note must be a long hold");
+
+// Hot Cross Buns: quick middle run is subdivided
+const hot = noteTokens(tuneBlock("hotcross"));
+assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
+
+// No tune is left with uniform 1-beat notes (the jumbled-playback bug)
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory"]) {
+  const notes = noteTokens(tuneBlock(id));
+  assert.ok(notes.length > 0, `${id}: no notes parsed`);
+  assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
+  assert.ok(notes.every(n => n.beats > 0 && n.beats <= 4), `${id}: beats out of range`);
+}
+
+// Playback + tutorial must consume the same durations
+for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
+  assert.ok(html.includes(sym), `missing ${sym}`);
+}
+assert.ok(html.includes('id="playBtn"'), "missing Play button");
+assert.ok(html.includes('id="tempoRange"'), "missing tempo control");
+
+console.log("cadence ok:", bpms.length, "tunes with bpm");
