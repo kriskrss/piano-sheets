@@ -23,9 +23,9 @@ function noteTokens(block) {
     {
       for (const tok of m[1].split(/\s+/).filter(Boolean)) {
         if (tok === "|" || tok === "-") continue;
-        const mm = tok.match(/^([A-G][#b]?[+-]?\d?|[A-G][#b]?\d?)(?::(\d+(?:\.\d+)?))?$/);
+        const mm = tok.match(/^([A-G][#b]?[+-]?\d?|[A-G][#b]?\d?)(?::(\d+(?:\.\d+)?))?(?:@(\d+))?$/);
         assert.ok(mm, `unparseable note token ${tok}`);
-        out.push({ pitch: mm[1], beats: mm[2] ? +mm[2] : 1 });
+        out.push({ pitch: mm[1], beats: mm[2] ? +mm[2] : 1, key: mm[3] ? +mm[3] : null });
       }
     }
   }
@@ -53,6 +53,16 @@ for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
   assert.ok(notes.every(n => n.beats > 0 && n.beats <= 4), `${id}: beats out of range`);
 }
+
+// Interstellar (Gigglescape): notes span two octaves, so every note must pin
+// its white key explicitly. The anchor E is the 10th white key (per the tune's
+// own instructions); pattern notes sit below it, the turn above it. Without
+// @key the player guessed the octave per note and the melody drifted.
+const inter = noteTokens(tuneBlock("interstellar"));
+assert.deepEqual(inter.slice(0, 24).map(n => n.key),
+  [4,6,10,6,10, 5,7,10,7,10, 6,8,10,8,10, 5,9,10,9,10, 11,12,13,12],
+  "Interstellar Gigglescape notes must pin keys 4-13 with E on key 10");
+assert.ok(html.includes("function tokenKey"), "missing tokenKey parser for @key pins");
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {

@@ -261,6 +261,8 @@
    Lines: [notes, lyric]. Notes are space separated tokens.
    Token suffix :beats is how long the note lasts (default 1), e.g. G:2 is a
    2-beat hold, C:0.5 is a quick half-beat. bpm is the tune's tempo.
+   Gigglescape tokens may also carry @key (exact white key 1-15) when the
+   letter alone spans octaves — Interstellar uses this; display strips it.
    gig  = Gigglescape toy piano, 15 white keys C..C, letters as printed.
           C+ = the next C up, G- = the G just below the start C of that tune.
    casio = Casio CT-X700, scientific names, middle C = C4.
@@ -270,7 +272,7 @@ const TUNES = [
 { id:"interstellar", title:"Interstellar - Main Theme", group:"Movie themes", glyph:"&#9834;", bpm:72,
   tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
   gig:{ startKey:4, start:"Work in the middle of the piano.\nPlay the low note once, then its pattern. Slow and steady, one note per beat.\nThe note you keep coming back to is E, the 10th white key.",
-    lines:[["F:2 | A:0.5 E:0.5 A:0.5 E:0.5",""],["G:2 | B:0.5 E:0.5 B:0.5 E:0.5",""],["A:2 | C:0.5 E:0.5 C:0.5 E:0.5",""],["G:2 | D:0.5 E:0.5 D:0.5 E:0.5",""],["F G A G:3","the turn, above the E"]] },
+    lines:[["F:2@4 | A:0.5@6 E:0.5@10 A:0.5@6 E:0.5@10",""],["G:2@5 | B:0.5@7 E:0.5@10 B:0.5@7 E:0.5@10",""],["A:2@6 | C:0.5@8 E:0.5@10 C:0.5@8 E:0.5@10",""],["G:2@5 | D:0.5@9 E:0.5@10 D:0.5@9 E:0.5@10",""],["F@11 G@12 A@13 G:3@12","the turn, above the E"]] },
   casio:{ startKey:4, start:"The low notes are F3, G3 and A3, below middle C (C4).\nThe note you keep coming back to is E5. The pattern notes climb A4, B4, C5, D5 under it.\nPlay the low note once, then its pattern. Slow and steady.",
     lines:[["F3:2 | A4:0.5 E5:0.5 A4:0.5 E5:0.5",""],["G3:2 | B4:0.5 E5:0.5 B4:0.5 E5:0.5",""],["A3:2 | C5:0.5 E5:0.5 C5:0.5 E5:0.5",""],["G3:2 | D5:0.5 E5:0.5 D5:0.5 E5:0.5",""],["F5 G5 A5 G5:3","the turn"]] } },
 { id:"hedwig", title:"Harry Potter - Hedwig's Theme", group:"Movie themes", glyph:"&#9834;", bpm:96,
@@ -373,10 +375,16 @@ let audioCtx = null, masterGain = null, playbackTimers = [], playing = false, cu
 
 /* ============ RHYTHM + PITCH ============ */
 function tokenBeats(tok){
-  const m = String(tok).match(/:(\d+(?:\.\d+)?)$/);
+  const m = String(tok).match(/:(\d+(?:\.\d+)?)(?:@\d+)?$/);
   return m ? parseFloat(m[1]) : 1;
 }
-function tokenPitch(tok){ return String(tok).replace(/:\d+(?:\.\d+)?$/, ""); }
+function tokenPitch(tok){ return String(tok).replace(/(:\d+(?:\.\d+)?)?(@\d+)?$/, ""); }
+/* Gigglescape only: @N pins the exact white key (1-15) when a tune spans
+   octaves and the letter alone is ambiguous, e.g. Interstellar's E @10. */
+function tokenKey(tok){
+  const m = String(tok).match(/@(\d+)$/);
+  return m ? parseInt(m[1],10) : null;
+}
 function beatsLabel(b){ return b===0.5 ? "\u00bd" : b===1.5 ? "1\u00bd" : String(b); }
 const SEMI = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
 function casioMidi(p){
@@ -404,6 +412,10 @@ function buildSequence(v){
       const pitch = tokenPitch(tok), beats = tokenBeats(tok);
       let midi;
       if(piano==="casio"){ midi = casioMidi(pitch); }
+      else if(tokenKey(tok) !== null){
+        const k = tokenKey(tok);
+        midi = 60 + Math.floor((k-1)/7)*12 + SEMI[["C","D","E","F","G","A","B"][(k-1)%7]] + (pitch.includes("#") ? 1 : 0);
+      }
       else {
         const m = pitch.match(/^([A-G])(#)?([+-])?$/);
         const letter = m ? m[1] : "C", sharp = !!(m && m[2]), suf = m ? m[3] : null;
