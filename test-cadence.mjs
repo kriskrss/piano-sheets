@@ -64,6 +64,14 @@ assert.deepEqual(inter.slice(0, 24).map(n => n.key),
   "Interstellar Gigglescape notes must pin keys 4-13 with E on key 10");
 assert.ok(html.includes("function tokenKey"), "missing tokenKey parser for @key pins");
 
+// Hedwig (Gigglescape): plain notes are the lower half (keys 1-7), + notes the
+// higher half (keys 8-14). Line 3 must restart on low B (key 7), not drift to
+// the high B after the previous phrase.
+const hed = noteTokens(tuneBlock("hedwig"));
+assert.deepEqual(hed.slice(0, 23).map(n => n.key),
+  [3,6,8,7,6, 10,9,14,13, 7,10,12,11,10, 14,13,11, 10,12,11,9,11,7],
+  "Hedwig Gigglescape notes must pin lower/higher-half keys with line 3 on low B (key 7)");
+
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
   assert.ok(html.includes(sym), `missing ${sym}`);
