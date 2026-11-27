@@ -149,13 +149,14 @@ const hk = noteTokens(tuneBlock("hakunamatata"));
 assert.deepEqual(hk.slice(0, 6).map(n => n.pitch), ["D","D#","D","D#","D","C"]);
 assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [0.5,0.5,0.5,0.5,0.5,1.5]);
 
-// Let It Go: chorus only, in C major. Rhythm from the engraved score in
-// Hal Leonard's "Really Easy Piano: 40 Disney Songs" (chorus bars):
-// quick pickup runs into held notes; the final line runs in eighths.
-// Pitches: Hoffman Academy's lesson and musicpandit's letter notes.
+// Let It Go: re-encoded Nov 2026 from the Betacustic beginner sheet
+// (Musicnotes MN0230940, E minor, 4/4, q=80), page-1 preview: the
+// VERSE strain (the chorus sits on the paywalled page 2). Eighth-note
+// groups into a dotted-quarter G; the final bar's rest is folded into
+// the C# and the low A3 pickup to page 2 is left off.
 const lig = noteTokens(tuneBlock("letitgo"));
-assert.deepEqual(lig.slice(0, 3).map(n => n.pitch), ["A","B","C+"]);
-assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
+assert.deepEqual(lig.slice(0, 3).map(n => n.pitch), ["F#+","G+","B-"]);
+assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 
 // Itsy Bitsy Spider: rhythm from the engraved PianoLessons4Children
 // C-major score (4/4, lyrics underlaid): the whole tune lilts in
