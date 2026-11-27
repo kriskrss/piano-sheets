@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -295,6 +295,16 @@ assert.deepEqual(md.slice(0, 5).map(n => n.beats), [0.5,1,1,1.5,0.5]);
 const isl = noteTokens(tuneBlock("iseethelight"));
 assert.deepEqual(isl.slice(0, 3).map(n => n.pitch), ["G","F","E"]);
 assert.deepEqual(isl.slice(0, 3).map(n => n.beats), [1,1,2]);
+
+// Hallelujah: Betacustic beginner sheet (Musicnotes MN0222670,
+// C major, 6/8, dotted-quarter = 60, so bpm 90 in quarter beats),
+// page-1 preview (pickup + 14 bars): tied eighths merged into their
+// holds in bars 2-4; bar 8 is rests plus a pickup eighth, and its
+// rests (2.5 beats) are folded into bar 7's dotted D, which lands
+// exactly on the 4-beat cap.
+const hj = noteTokens(tuneBlock("hallelujah"));
+assert.deepEqual(hj.slice(0, 3).map(n => n.pitch), ["G","G","G"]);
+assert.deepEqual(hj.slice(0, 3).map(n => n.beats), [0.5,1,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
