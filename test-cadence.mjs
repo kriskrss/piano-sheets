@@ -78,6 +78,10 @@ assert.deepEqual(hed.slice(0, 23).map(n => n.key),
 const lon = noteTokens(tuneBlock("londonbridge"));
 assert.deepEqual(lon.slice(0, 7).map(n => n.beats), [1.5,0.5,1,1,1,1,2]);
 assert.deepEqual(lon.slice(7, 13).map(n => n.beats), [1,1,2,1,1,2]);
+// Line 4 ("my fair la-dy"): the score holds D and G for 2 beats each
+// (PrintableGarden / tonalics readings of the published score).
+assert.deepEqual(lon.slice(20, 24).map(n => n.pitch), ["D","G","E","C"]);
+assert.deepEqual(lon.slice(20, 24).map(n => n.beats), [2,2,1,2]);
 
 // Three Blind Mice: the three long lines all climb the same figure
 // (G C+ C+ B A B C+ ...) and the song ends on low C, not a held high C.
