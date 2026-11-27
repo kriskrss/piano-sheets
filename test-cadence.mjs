@@ -127,13 +127,14 @@ const jp = noteTokens(tuneBlock("jurassicpark"));
 assert.deepEqual(jp.slice(0, 3).map(n => n.pitch), ["C+","B","C+"]);
 assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
 
-// Bare Necessities: rhythm from the engraved score in Hal Leonard's
-// "Really Easy Piano: 40 Disney Songs" (F major, 2/2, counted in quarter
-// units): the opening pickup notes are full quarters, not eighths.
-// Pitches: C-major transcription (mypianonotes), Eb written as D#.
+// Bare Necessities: rhythm from the published piano/vocal score (the
+// SheetMusic-Free PVG engraving of the Gilkyson original): "Look for
+// the" are three quarter-note pickups, "bare" is a half note, and
+// "si-ties" is an eighth-note pair. Pitches: C-major transcription
+// (mypianonotes), Eb written as D#.
 const bn = noteTokens(tuneBlock("barenecessities"));
 assert.deepEqual(bn.slice(0, 10).map(n => n.pitch), ["G","A","C+","D#","E+","D#","E+","D","C+","A"]);
-assert.deepEqual(bn.slice(0, 2).map(n => n.beats), [1,1]);
+assert.deepEqual(bn.slice(0, 10).map(n => n.beats), [1,1,1,2,1,1,0.5,0.5,1,2]);
 assert.equal(bn[9].beats, 2, "Bare Necessities line 1 must end on a held A");
 
 // Hakuna Matata: rhythm from the official Lion King songbook
