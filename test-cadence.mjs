@@ -134,11 +134,14 @@ assert.deepEqual(bn.slice(0, 10).map(n => n.pitch), ["G","A","C+","D#","E+","D#"
 assert.deepEqual(bn.slice(0, 2).map(n => n.beats), [1,1]);
 assert.equal(bn[9].beats, 2, "Bare Necessities line 1 must end on a held A");
 
-// Hakuna Matata: chorus pitches from the AmosDoll/ChordU tutorial
-// (D Eb D Eb D C / A C D Eb D C), Eb written as D# for the gig parser.
+// Hakuna Matata: rhythm from the official Lion King songbook
+// (Wonderland Music, piano/vocal): the title phrase is chanted in
+// eighth notes and quarter-note triplets (triplets approximated as 0.5
+// notes), final note held 1.5. Pitches: AmosDoll/ChordU tutorial,
+// Eb written as D# for the gig parser.
 const hk = noteTokens(tuneBlock("hakunamatata"));
 assert.deepEqual(hk.slice(0, 6).map(n => n.pitch), ["D","D#","D","D#","D","C"]);
-assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [1,0.5,0.5,1,1,2]);
+assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [0.5,0.5,0.5,0.5,0.5,1.5]);
 
 // Let It Go: chorus only, in C major. Hoffman Academy's lesson and
 // musicpandit's letter notes agree: A B C / G G D, rising to G5 on
