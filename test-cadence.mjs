@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -386,6 +386,18 @@ assert.deepEqual(gummybearN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 const fnafN = noteTokens(tuneBlock("fnaf"));
 assert.deepEqual(fnafN.slice(0, 3).map(n => n.pitch), ["G+", "A+", "G+"]);
 assert.deepEqual(fnafN.slice(0, 3).map(n => n.beats), [1, 0.75, 0.25]);
+
+// Gravity Falls Theme: Betacustic beginner sheet (Musicnotes
+// MN0231591, D minor, 4/4, q = 140), page-1 preview (15 bars,
+// lettered heads). Bars 1-4 loop an eighth-note arpeggio riff;
+// in the A-major bars every C is sharp (marked once, carries
+// through the bar). Bars 5-12 are long held notes (dotted half
+// + quarter, whole notes, half-note pairs); bars 13 and 15 are
+// three quarters after a quarter rest. Bar totals checked
+// against beams, dots and note spacing.
+const gravityfallsN = noteTokens(tuneBlock("gravityfalls"));
+assert.deepEqual(gravityfallsN.slice(0, 3).map(n => n.pitch), ["F+", "D+", "A"]);
+assert.deepEqual(gravityfallsN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
