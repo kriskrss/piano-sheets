@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -305,6 +305,19 @@ assert.deepEqual(isl.slice(0, 3).map(n => n.beats), [1,1,2]);
 const hj = noteTokens(tuneBlock("hallelujah"));
 assert.deepEqual(hj.slice(0, 3).map(n => n.pitch), ["G","G","G"]);
 assert.deepEqual(hj.slice(0, 3).map(n => n.beats), [0.5,1,0.5]);
+
+// All Is Found: Betacustic beginner sheet (Musicnotes MN0231590,
+// A minor, 4/4, q = 70), page-1 preview (pickup + 7 bars). Head
+// fill is unreliable in this preview (D, G and dotted C heads print
+// hollow-looking), so values rest on beams, flags, dots and bar
+// arithmetic: dotted quarters of 1.5 in bars 1-3, a sixteenth pair
+// in bar 4. Rests fold into the preceding hold (bars 1-4; bar 6's
+// opening eighth rest folds back into bar 5's C, 2 + 0.5 = 2.5).
+// Ties merge within bars 4 and 7; the bar 1-2 and bar 6-7 ties stay
+// as paired eighths across the line break.
+const af = noteTokens(tuneBlock("allisfound"));
+assert.deepEqual(af.slice(0, 3).map(n => n.pitch), ["C+","D+","E+"]);
+assert.deepEqual(af.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
