@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -225,6 +225,14 @@ const hp = noteTokens(tuneBlock("hesapirate"));
 assert.deepEqual(hp.slice(0, 4).map(n => n.beats), [1,0.5,1,0.5]);
 assert.deepEqual(hp.slice(27, 31).map(n => n.pitch), ["D+","D+","D+","E+"]);
 assert.deepEqual(hp.slice(27, 31).map(n => n.beats), [1,1,0.5,0.5]);
+
+// How Far I'll Go: Betacustic beginner sheet (Musicnotes MN0222533,
+// F major, 4/4, q=70), full page-1 preview (10 bars): syncopated
+// sixteenth figures; rests folded into the preceding holds (the
+// bar-1 F takes the sixteenth rest, bar-5 C the eighth rest).
+const hf = noteTokens(tuneBlock("howfarillgo"));
+assert.deepEqual(hf.slice(0, 3).map(n => n.pitch), ["F","C","F"]);
+assert.deepEqual(hf.slice(0, 3).map(n => n.beats), [1,0.5,0.75]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
