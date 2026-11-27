@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -365,6 +365,16 @@ assert.deepEqual(swedenN.slice(0, 3).map(n => n.beats), [2, 2, 2]);
 const coffindanceN = noteTokens(tuneBlock("coffindance"));
 assert.deepEqual(coffindanceN.slice(0, 3).map(n => n.pitch), ["C+", "C+", "C+"]);
 assert.deepEqual(coffindanceN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
+
+// The Gummy Bear Song: Betacustic beginner sheet (Musicnotes
+// MN0228066, A minor, 4/4, q = 89), page-1 preview (pickup bar
+// plus 8 bars, lettered heads). The signature figure is a beamed
+// eighth pair, a quarter tied to an eighth (1.5), then three
+// eighths; the C bars answer with quarter + tied eighths. Every
+// full bar totals 4 by beams, ties and arithmetic.
+const gummybearN = noteTokens(tuneBlock("gummybear"));
+assert.deepEqual(gummybearN.slice(0, 3).map(n => n.pitch), ["A", "A", "A"]);
+assert.deepEqual(gummybearN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
