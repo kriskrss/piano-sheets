@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania","godzilla","thepianoduet","bloodymary","givethanks","yousay","hereiamtoworship"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania","godzilla","thepianoduet","bloodymary","givethanks","yousay","hereiamtoworship","oceans"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -822,6 +822,22 @@ assert.deepEqual(worshipN.slice(0, 6).map(n => n.beats), [1, 0.5, 0.5, 1, 0.5, 0
 assert.deepEqual(worshipN.slice(24, 29).map(n => n.pitch), ["F#", "F#", "D", "D", "D"]);
 assert.deepEqual(worshipN.slice(24, 29).map(n => n.beats), [1.5, 0.5, 0.5, 0.5, 1]);
 assert.deepEqual(worshipN.slice(46, 52).map(n => n.pitch), ["F#4", "F#4", "A4", "E4", "E4", "F#4"]);
+
+// Oceans (Where Feet May Fail) (Betacustic Beginner Notes
+// sheet MN0228185, D major, quarter = 64), page-1 preview:
+// four intro bars (repeat sign on the sheet) and the verse,
+// bars 5-10. Values settle by bar arithmetic: dotted-half +
+// quarter in bar 1, whole notes in bars 2-4, and the verse's
+// dotted-eighth + sixteenth pairs (0.75 + 0.25) with 16th
+// pickups after dotted rests. Bar 9 repeats bar 5's figure;
+// its dotted heads are B3, a step below the C#4 that closes
+// the figure (ledger line through the C# head only).
+const oceansN = noteTokens(tuneBlock("oceans"));
+assert.deepEqual(oceansN.slice(0, 2).map(n => n.pitch), ["A", "D"]);
+assert.deepEqual(oceansN.slice(0, 2).map(n => n.beats), [3, 1]);
+assert.deepEqual(oceansN.slice(5, 12).map(n => n.pitch), ["A", "B", "A", "B", "A", "C#", "D"]);
+assert.deepEqual(oceansN.slice(5, 12).map(n => n.beats), [0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25]);
+assert.deepEqual(oceansN.slice(36, 38).map(n => n.pitch), ["A4", "D5"]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
