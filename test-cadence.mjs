@@ -117,11 +117,13 @@ const sw = noteTokens(tuneBlock("starwars"));
 assert.deepEqual(sw.slice(0, 5).map(n => n.pitch), ["G","G","G","C+","G"]);
 assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.5,0.5,0.5,2,1]);
 
-// Jurassic Park: slow held-note theme; La Touche Musicale and
-// pianoletternotes C-major letter notes agree on this pitch sequence.
+// Jurassic Park: rhythm from the timed letter-grid transcription of the
+// theme (onset spacing in the MuseScore-derived grid, 16th-note units):
+// two quick notes into a dotted-half hold. Pitches: La Touche Musicale
+// and pianoletternotes C-major letter notes.
 const jp = noteTokens(tuneBlock("jurassicpark"));
 assert.deepEqual(jp.slice(0, 3).map(n => n.pitch), ["C+","B","C+"]);
-assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [2,1,2]);
+assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
 
 // Bare Necessities: C-major transcription (mypianonotes) with the Eb blue
 // note written as D#; a guitar tab transcription agrees on the chorus motif.
