@@ -79,6 +79,16 @@ const lon = noteTokens(tuneBlock("londonbridge"));
 assert.deepEqual(lon.slice(0, 7).map(n => n.beats), [1.5,0.5,1,1,1,1,2]);
 assert.deepEqual(lon.slice(7, 13).map(n => n.beats), [1,1,2,1,1,2]);
 
+// Three Blind Mice: the three long lines all climb the same figure
+// (G C+ C+ B A B C+ ...) and the song ends on low C, not a held high C.
+const tbm = noteTokens(tuneBlock("threeblind"));
+assert.deepEqual(tbm.slice(14, 47).map(n => n.pitch),
+  ["G","C+","C+","B","A","B", "C+","G","G", "G","C+","C+","C+","B",
+   "A","B","C+","G","G", "G","C+","C+","C+","B","A","B", "C+","G","G","G",
+   "E","D","C"],
+  "Three Blind Mice middle/ending must follow the published figure");
+assert.equal(tbm[46].beats, 3, "Three Blind Mice final low C must be held");
+
 // Rain, Rain: running-eighths standard, every line totals exactly 4 beats
 const rain = noteTokens(tuneBlock("rainrain"));
 const rainLines = [[0,5],[5,12],[12,19],[19,26]];
