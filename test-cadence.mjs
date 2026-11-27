@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -343,6 +343,18 @@ assert.deepEqual(rb.slice(0, 3).map(n => n.beats), [4,3,1]);
 const sh = noteTokens(tuneBlock("shallow"));
 assert.deepEqual(sh.slice(0, 3).map(n => n.pitch), ["C+","D+","D+"]);
 assert.deepEqual(sh.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
+
+// Sweden (Minecraft): Betacustic beginner sheet (Musicnotes
+// MN0236864, B minor / D major, 4/4, q = 44), page-1 preview
+// (12 bars). Bars 1-6 are half-note pairs: the low note climbs
+// G3 A3 B3 C#4, falls back to B3, C#4, each answered by D4.
+// Bars 7-12 settle by beams and bar arithmetic: dotted quarters
+// of 1.5 and sixteenth pairs of 0.25; bar 7's low B is a quarter
+// (the bar only totals 4 that way). The gig board re-voices the
+// low strain an octave up and keeps the high sparkles as written.
+const swedenN = noteTokens(tuneBlock("sweden"));
+assert.deepEqual(swedenN.slice(0, 3).map(n => n.pitch), ["G", "D+", "A"]);
+assert.deepEqual(swedenN.slice(0, 3).map(n => n.beats), [2, 2, 2]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
