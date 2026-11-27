@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -470,6 +470,17 @@ assert.deepEqual(diewithasmileN.slice(0, 3).map(n => n.beats), [3, 1.5, 1.5]);
 const fureliseN = noteTokens(tuneBlock("furelise"));
 assert.deepEqual(fureliseN.slice(0, 2).map(n => n.pitch), ["E+", "D#"]);
 assert.deepEqual(fureliseN.slice(0, 2).map(n => n.beats), [0.5, 0.5]);
+
+
+// Faded: Betacustic beginner sheet (Musicnotes MN0226206,
+// A minor, 4/4, q=74), page-1 preview (9 bars, lettered
+// heads). Bars 1-4 are plain quarters (the hollow-looking
+// heads cannot be halves - four halves would overflow the
+// bar). Bars 5 and 9 open with an eighth rest and bar 7 with
+// a half + eighth rest; the rests are dropped here.
+const fadedN = noteTokens(tuneBlock("faded"));
+assert.deepEqual(fadedN.slice(0, 4).map(n => n.pitch), ["A", "A", "A", "C"]);
+assert.deepEqual(fadedN.slice(0, 4).map(n => n.beats), [1, 1, 1, 1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
