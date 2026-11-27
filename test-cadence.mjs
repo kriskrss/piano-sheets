@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -121,6 +121,19 @@ assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.5,0.5,0.5,2,2]);
 const jp = noteTokens(tuneBlock("jurassicpark"));
 assert.deepEqual(jp.slice(0, 3).map(n => n.pitch), ["C+","B","C+"]);
 assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [2,1,2]);
+
+// Bare Necessities: C-major transcription (mypianonotes) with the Eb blue
+// note written as D#; a guitar tab transcription agrees on the chorus motif.
+const bn = noteTokens(tuneBlock("barenecessities"));
+assert.deepEqual(bn.slice(0, 10).map(n => n.pitch), ["G","A","C+","D#","E+","D#","E+","D","C+","A"]);
+assert.deepEqual(bn.slice(0, 2).map(n => n.beats), [0.5,0.5]);
+assert.equal(bn[9].beats, 2, "Bare Necessities line 1 must end on a held A");
+
+// Hakuna Matata: chorus pitches from the AmosDoll/ChordU tutorial
+// (D Eb D Eb D C / A C D Eb D C), Eb written as D# for the gig parser.
+const hk = noteTokens(tuneBlock("hakunamatata"));
+assert.deepEqual(hk.slice(0, 6).map(n => n.pitch), ["D","D#","D","D#","D","C"]);
+assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [1,0.5,0.5,1,1,2]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
