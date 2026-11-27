@@ -109,12 +109,13 @@ for (const [a,b] of rainLines) {
 }
 assert.deepEqual(rain.slice(0,5).map(n => n.beats), [1,1,0.5,0.5,1]);
 
-// Star Wars: the triplet pickup becomes three quick Gs, then two held
-// notes (Hoffman Academy's G-major lesson transposed to C; La Touche
-// Musicale's C-major letter notes agree on the pitches).
+// Star Wars: rhythm from the Ultimate Guitar full-score transcription of
+// the recording (Miles Park): the opening figure is an eighth-note triplet
+// into a half note and a quarter note (triplet approximated as three 0.5
+// notes). Pitches: Hoffman Academy's G-major lesson transposed to C. 
 const sw = noteTokens(tuneBlock("starwars"));
 assert.deepEqual(sw.slice(0, 5).map(n => n.pitch), ["G","G","G","C+","G"]);
-assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.5,0.5,0.5,2,2]);
+assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.5,0.5,0.5,2,1]);
 
 // Jurassic Park: slow held-note theme; La Touche Musicale and
 // pianoletternotes C-major letter notes agree on this pitch sequence.
