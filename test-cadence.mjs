@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -408,6 +408,18 @@ assert.deepEqual(gravityfallsN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 const silentnightN = noteTokens(tuneBlock("silentnight"));
 assert.deepEqual(silentnightN.slice(0, 3).map(n => n.pitch), ["G", "E", "G"]);
 assert.deepEqual(silentnightN.slice(0, 3).map(n => n.beats), [1.5, 0.5, 1]);
+
+// Miraculous Ladybug Theme: Betacustic beginner sheet
+// (Musicnotes MN0234709, A minor, 4/4, q = 100), page-1
+// preview (8 bars, lettered heads). Most bars open with a
+// quarter + eighth rest, then a C4 C4 A3 riff figure. Bars 4
+// and 8 hold a dotted quarter, then two eighths tied into one
+// beat (merged here), a C4 eighth and a C4 quarter. Bar 7
+// answers C4 B3 C4 A3. Every bar totals 4 by rests, beams,
+// flags, dots and the tie.
+const miraculousN = noteTokens(tuneBlock("miraculous"));
+assert.deepEqual(miraculousN.slice(0, 3).map(n => n.pitch), ["C", "C", "A"]);
+assert.deepEqual(miraculousN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
