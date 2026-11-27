@@ -267,7 +267,7 @@
           C+ = the next C up, G- = the G just below the start C of that tune.
    casio = Casio CT-X700, scientific names, middle C = C4.
 */
-const GROUPS = ["Movie themes","Toddler rhymes - Set 1","Toddler rhymes - Set 2"];
+const GROUPS = ["Movie themes","Pop favorites","Games & TV themes","Classics","Worship","Toddler rhymes - Set 1","Toddler rhymes - Set 2"];
 const TUNES = [
 { id:"interstellar", title:"Interstellar - Main Theme", group:"Movie themes", glyph:"&#9834;", bpm:72,
   tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
@@ -911,7 +911,8 @@ function renderHome(filter){
   const f = (filter||"").trim().toLowerCase();
   homeEl.innerHTML = "";
   let any = false;
-  GROUPS.forEach(g=>{
+  const allGroups = GROUPS.concat(TUNES.map(t=>t.group).filter((g,i,a)=>!GROUPS.includes(g) && a.indexOf(g)===i));
+  allGroups.forEach(g=>{
     const tunes = TUNES.filter(t=>t.group===g && (!f || t.title.toLowerCase().includes(f)));
     if(!tunes.length) return;
     any = true;
