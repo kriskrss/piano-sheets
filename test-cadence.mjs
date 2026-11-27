@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -134,6 +134,13 @@ assert.equal(bn[9].beats, 2, "Bare Necessities line 1 must end on a held A");
 const hk = noteTokens(tuneBlock("hakunamatata"));
 assert.deepEqual(hk.slice(0, 6).map(n => n.pitch), ["D","D#","D","D#","D","C"]);
 assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [1,0.5,0.5,1,1,2]);
+
+// Let It Go: chorus only, in C major. Hoffman Academy's lesson and
+// musicpandit's letter notes agree: A B C / G G D, rising to G5 on
+// "I don't care".
+const lig = noteTokens(tuneBlock("letitgo"));
+assert.deepEqual(lig.slice(0, 3).map(n => n.pitch), ["A","B","C+"]);
+assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
