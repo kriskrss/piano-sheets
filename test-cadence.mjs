@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -274,6 +274,16 @@ assert.deepEqual(aty.slice(0, 6).map(n => n.beats), [1.5,1.5,1.5,1,0.25,0.25]);
 const pf = noteTokens(tuneBlock("perfect"));
 assert.deepEqual(pf.slice(0, 4).map(n => n.pitch), ["D","E","G","G"]);
 assert.deepEqual(pf.slice(0, 4).map(n => n.beats), [0.5,0.5,0.5,3]);
+
+// A Million Dreams: the main tutorial's sheet link leads to an
+// Easy grand-staff edition (MN0201058, no note names, mostly intro
+// on page 1), so this uses the SLOW twin's Beginner Notes edition
+// (Musicnotes MN0217678, G major, 4/4, q = 120), page-1 preview:
+// the singing enters at bar 5 (B B C, then D C B C twice); the
+// eighth rests after the D notes are folded into their holds.
+const md = noteTokens(tuneBlock("amilliondreams"));
+assert.deepEqual(md.slice(0, 3).map(n => n.pitch), ["B","B","C+"]);
+assert.deepEqual(md.slice(0, 5).map(n => n.beats), [0.5,1,1,1.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
