@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -458,6 +458,18 @@ assert.deepEqual(allofmeN.slice(0, 3).map(n => n.beats), [1.5, 0.5, 1]);
 const diewithasmileN = noteTokens(tuneBlock("diewithasmile"));
 assert.deepEqual(diewithasmileN.slice(0, 3).map(n => n.pitch), ["E", "E", "E+"]);
 assert.deepEqual(diewithasmileN.slice(0, 3).map(n => n.beats), [3, 1.5, 1.5]);
+
+
+// Fur Elise: Betacustic beginner sheet (Musicnotes MN0224232,
+// A minor, 6/8, dotted-q = 46, so bpm 69), page-1 preview
+// (pickup + 7 bars, lettered heads). The famous strain: the
+// E-D# pickup, then bars of three beamed eighths under a
+// dotted-quarter melody note. Bar 7's group is E4 C5 B4 -
+// this arrangement does NOT repeat bar 3's E4 G#4 B4 figure
+// (no sharp sign; the middle head measures on the C5 space).
+const fureliseN = noteTokens(tuneBlock("furelise"));
+assert.deepEqual(fureliseN.slice(0, 2).map(n => n.pitch), ["E+", "D#"]);
+assert.deepEqual(fureliseN.slice(0, 2).map(n => n.beats), [0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
