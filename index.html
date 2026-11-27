@@ -465,12 +465,30 @@ function buildSequence(v){
   });
   return seq;
 }
+let speakerEl = null, speakerDest = null;
+function routeToSpeaker(){
+  // Send WebAudio out through a media element: iOS then uses the media
+  // (speaker) channel, which ignores the silent switch, instead of the
+  // ringer channel WebAudio gets when connected straight to destination.
+  try{
+    if(!speakerDest){
+      speakerDest = audioCtx.createMediaStreamDestination();
+      speakerEl = document.createElement("audio");
+      speakerEl.setAttribute("playsinline", "");
+      speakerEl.srcObject = speakerDest.stream;
+    }
+    masterGain.connect(speakerDest);
+    const p = speakerEl.play(); if(p && p.catch) p.catch(function(){});
+  }catch(e){
+    try{ masterGain.connect(audioCtx.destination); }catch(e2){}
+  }
+}
 function ensureAudio(){
   if(!audioCtx){
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return false;
     audioCtx = new AC(); masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5;
-    masterGain.connect(audioCtx.destination);
+    routeToSpeaker();
   }
   if(audioCtx.state==="suspended") audioCtx.resume();
   return true;
@@ -490,7 +508,7 @@ function playToneAt(midi, when, durSec){
 function tempoBpm(){ return parseInt($("#tempoRange").value,10) || 100; }
 function stopPlayback(){
   playbackTimers.forEach(clearTimeout); playbackTimers = [];
-  if(masterGain && audioCtx){ try{ masterGain.disconnect(); }catch(e){} masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5; masterGain.connect(audioCtx.destination); }
+  if(masterGain && audioCtx){ try{ masterGain.disconnect(); }catch(e){} masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5; routeToSpeaker(); }
   playing = false;
   const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
 }
