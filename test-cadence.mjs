@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -184,6 +184,14 @@ assert.equal(ml[8].beats, 2.5, "Married Life C+ must carry the score's rest in i
 const mh = noteTokens(tuneBlock("myheartwillgoon"));
 assert.deepEqual(mh.slice(0, 4).map(n => n.pitch), ["F","F","F","F"]);
 assert.deepEqual(mh.slice(0, 4).map(n => n.beats), [1.5,0.5,1,1]);
+
+// Pink Panther: Betacustic beginner sheet (Musicnotes MN0221798,
+// E minor, 4/4): the riff is a grace-note pickup (encoded 0.5) into a
+// dotted-long E and a short F#; statement 3 turns the grace note to
+// Eb and the short note to D natural, landing on a held C.
+const pp = noteTokens(tuneBlock("pinkpanther"));
+assert.deepEqual(pp.slice(0, 3).map(n => n.pitch), ["D#","E","F#"]);
+assert.deepEqual(pp.slice(0, 3).map(n => n.beats), [0.5,2.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
