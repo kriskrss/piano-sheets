@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -375,6 +375,17 @@ assert.deepEqual(coffindanceN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 const gummybearN = noteTokens(tuneBlock("gummybear"));
 assert.deepEqual(gummybearN.slice(0, 3).map(n => n.pitch), ["A", "A", "A"]);
 assert.deepEqual(gummybearN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
+
+// Five Nights at Freddy's (The Living Tombstone): Betacustic
+// beginner sheet (Musicnotes MN0240717, A minor, 4/4, q = 100),
+// page-1 preview (10 bars, lettered heads). The top strain is
+// built on dotted-eighth + sixteenth pairs with half-note phrase
+// ends; bars 5-10 are eighth-note arpeggio runs with an
+// eighth + two-sixteenths tail figure. Bar 4 ends on G# (the
+// leading tone). Every bar totals 4 by beams, dots and ties.
+const fnafN = noteTokens(tuneBlock("fnaf"));
+assert.deepEqual(fnafN.slice(0, 3).map(n => n.pitch), ["G+", "A+", "G+"]);
+assert.deepEqual(fnafN.slice(0, 3).map(n => n.beats), [1, 0.75, 0.25]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
