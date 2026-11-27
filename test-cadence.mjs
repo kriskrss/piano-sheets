@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -284,6 +284,17 @@ assert.deepEqual(pf.slice(0, 4).map(n => n.beats), [0.5,0.5,0.5,3]);
 const md = noteTokens(tuneBlock("amilliondreams"));
 assert.deepEqual(md.slice(0, 3).map(n => n.pitch), ["B","B","C+"]);
 assert.deepEqual(md.slice(0, 5).map(n => n.beats), [0.5,1,1,1.5,0.5]);
+
+// I See The Light: Betacustic beginner sheet (Musicnotes MN0222534,
+// C major, 4/4, q = 80), page-1 preview (10 bars), cross-checked
+// against the SLOW twin's Easy edition (MN0207198): quarter-quarter-
+// half phrases, beamed eighth-note descents to the low G, one
+// whole-note bar. The melody dips below the gig board (G3, B3), so
+// the gig version plays an octave up, with three pinned keys where
+// the nearest-key rule would land on the wrong octave.
+const isl = noteTokens(tuneBlock("iseethelight"));
+assert.deepEqual(isl.slice(0, 3).map(n => n.pitch), ["G","F","E"]);
+assert.deepEqual(isl.slice(0, 3).map(n => n.beats), [1,1,2]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
