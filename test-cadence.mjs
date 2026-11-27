@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -420,6 +420,18 @@ assert.deepEqual(silentnightN.slice(0, 3).map(n => n.beats), [1.5, 0.5, 1]);
 const miraculousN = noteTokens(tuneBlock("miraculous"));
 assert.deepEqual(miraculousN.slice(0, 3).map(n => n.pitch), ["C", "C", "A"]);
 assert.deepEqual(miraculousN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
+
+// Happy Birthday To You: Betacustic beginner sheet
+// (Musicnotes MN0212901, F major, 3/4, no tempo printed -
+// bpm 100 chosen as a comfortable singing speed), page-1
+// preview (pickup + 11 bars, lettered heads). Each phrase
+// opens with two beamed eighth-note C4 pickups; the long
+// phrase notes (E4, F4) are half notes, not dotted halves,
+// because the pickup pair shares their bar - every bar
+// totals 3. The B in bar 7 is flat from the key signature.
+const happybirthdayN = noteTokens(tuneBlock("happybirthday"));
+assert.deepEqual(happybirthdayN.slice(0, 2).map(n => n.pitch), ["C", "C"]);
+assert.deepEqual(happybirthdayN.slice(0, 2).map(n => n.beats), [0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
