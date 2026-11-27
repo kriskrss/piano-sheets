@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -199,6 +199,15 @@ assert.deepEqual(pp.slice(0, 3).map(n => n.beats), [0.5,2.5,0.5]);
 const bs = noteTokens(tuneBlock("babyshark"));
 assert.deepEqual(bs.slice(0, 2).map(n => n.beats), [2,2]);
 assert.deepEqual(bs.slice(2, 9).map(n => n.beats), [0.5,0.5,0.5,0.25,0.5,0.25,0.5]);
+
+// Can't Help Falling In Love: Betacustic beginner sheet (Musicnotes
+// MN0233374, G major, 4/4, q=64): half-note pairs, a dotted-half D
+// with an eighth-note answer, and a quarter-note triplet climb
+// A B C encoded at 0.67 beats each.
+const ch = noteTokens(tuneBlock("canthelpfalling"));
+assert.deepEqual(ch.slice(0, 2).map(n => n.pitch), ["D","D+"]);
+assert.deepEqual(ch.slice(0, 2).map(n => n.beats), [2,2]);
+assert.deepEqual(ch.slice(12, 15).map(n => n.beats), [0.67,0.67,0.67]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
