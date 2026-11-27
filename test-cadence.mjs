@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -233,6 +233,15 @@ assert.deepEqual(hp.slice(27, 31).map(n => n.beats), [1,1,0.5,0.5]);
 const hf = noteTokens(tuneBlock("howfarillgo"));
 assert.deepEqual(hf.slice(0, 3).map(n => n.pitch), ["F","C","F"]);
 assert.deepEqual(hf.slice(0, 3).map(n => n.beats), [1,0.5,0.75]);
+
+// We Don't Talk About Bruno: Betacustic beginner sheet (Musicnotes
+// MN0248513, C minor, 4/4, q=104), page-1 preview bars 1-10 (Pepa's
+// verse): title figure over low A3, tied notes split across lines,
+// rests folded into holds. Range F3-Bb4 sits under the Gigglescape
+// board, so gig plays +12 (Eb written D# there, Bb written A#).
+const br = noteTokens(tuneBlock("wedonttalkaboutbruno"));
+assert.deepEqual(br.slice(0, 3).map(n => n.pitch), ["D#+","A","D#+"]);
+assert.deepEqual(br.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
