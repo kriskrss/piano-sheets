@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -177,6 +177,13 @@ const ml = noteTokens(tuneBlock("marriedlife"));
 assert.deepEqual(ml.slice(0, 4).map(n => n.pitch), ["F+","F+","A+","G+"]);
 assert.deepEqual(ml.slice(0, 4).map(n => n.beats), [3,0.5,0.5,0.5]);
 assert.equal(ml[8].beats, 2.5, "Married Life C+ must carry the score's rest in its hold");
+
+// My Heart Will Go On: Betacustic beginner sheet (Musicnotes MN0226803,
+// F major, 4/4, q=70): dotted-quarter + eighth F figure opens each
+// verse line; rests folded into the preceding hold.
+const mh = noteTokens(tuneBlock("myheartwillgoon"));
+assert.deepEqual(mh.slice(0, 4).map(n => n.pitch), ["F","F","F","F"]);
+assert.deepEqual(mh.slice(0, 4).map(n => n.beats), [1.5,0.5,1,1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
