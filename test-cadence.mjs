@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -398,6 +398,16 @@ assert.deepEqual(fnafN.slice(0, 3).map(n => n.beats), [1, 0.75, 0.25]);
 const gravityfallsN = noteTokens(tuneBlock("gravityfalls"));
 assert.deepEqual(gravityfallsN.slice(0, 3).map(n => n.pitch), ["F+", "D+", "A"]);
 assert.deepEqual(gravityfallsN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
+
+// Silent Night: Betacustic beginner sheet (Musicnotes
+// MN0245145, C major, 3/4, q = 80), page-1 preview (12 bars,
+// lettered heads, lyrics printed). The opening figure is a
+// dotted quarter + eighth + quarter; phrase ends are dotted
+// halves. Bars 5, 7 and 9 pair a half note with a quarter
+// (hollow head, then filled head, in all three bars).
+const silentnightN = noteTokens(tuneBlock("silentnight"));
+assert.deepEqual(silentnightN.slice(0, 3).map(n => n.pitch), ["G", "E", "G"]);
+assert.deepEqual(silentnightN.slice(0, 3).map(n => n.beats), [1.5, 0.5, 1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
