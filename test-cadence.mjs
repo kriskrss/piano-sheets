@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -521,6 +521,18 @@ assert.deepEqual(someonelikeyouN.slice(1, 5).map(n => n.beats), [0.5, 1.5, 0.25,
 const wellermanN = noteTokens(tuneBlock("wellerman"));
 assert.deepEqual(wellermanN.slice(0, 3).map(n => n.pitch), ["E", "A-", "A"]);
 assert.deepEqual(wellermanN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.25]);
+
+
+// Peppa Pig Theme: Betacustic beginner sheet (Musicnotes
+// MN0260123, C major, 4/4, q=80), page-1 preview (lettered
+// heads). The page is one two-bar phrase printed three
+// times: bar 1 is quarters with an eighth pair in the
+// middle (G5, E5-C5, D5, G4 - the hollow-looking heads
+// cannot be halves, the bar arithmetic gives quarters),
+// bar 2 runs up four eighths and lands E5-C5 in quarters.
+const peppapigN = noteTokens(tuneBlock("peppapig"));
+assert.deepEqual(peppapigN.slice(0, 4).map(n => n.pitch), ["G", "E", "C", "D"]);
+assert.deepEqual(peppapigN.slice(0, 4).map(n => n.beats), [1, 0.5, 0.5, 1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
