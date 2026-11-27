@@ -64,13 +64,16 @@ assert.deepEqual(inter.slice(0, 24).map(n => n.key),
   "Interstellar Gigglescape notes must pin keys 4-13 with E on key 10");
 assert.ok(html.includes("function tokenKey"), "missing tokenKey parser for @key pins");
 
-// Hedwig (Gigglescape): plain notes are the lower half (keys 1-7), + notes the
-// higher half (keys 8-14). Line 3 must restart on low B (key 7), not drift to
-// the high B after the previous phrase.
+// Hedwig: re-encoded from Stefan Lechner's easy arrangement
+// (creativepiano.at, E minor, 3/4, supplied by Sai): pickup B, then
+// E dotted-quarter / G eighth / F# quarter; the strain's signature bar
+// is half + quarter (E B, F# C, A B). The score's B-flat is written
+// as A# (the gig parser has no flats).
 const hed = noteTokens(tuneBlock("hedwig"));
-assert.deepEqual(hed.slice(0, 23).map(n => n.key),
-  [3,6,8,7,6, 10,9,14,13, 7,10,12,11,10, 14,13,11, 10,12,11,9,11,7],
-  "Hedwig Gigglescape notes must pin lower/higher-half keys with line 3 on low B (key 7)");
+assert.deepEqual(hed.slice(0, 4).map(n => n.pitch), ["B","E+","G+","F#+"]);
+assert.deepEqual(hed.slice(0, 4).map(n => n.beats), [1,1.5,0.5,1]);
+assert.deepEqual(hed.slice(21, 25).map(n => n.pitch), ["B3","E4","G4","F#4"]);
+assert.deepEqual(hed.slice(21, 25).map(n => n.beats), [1,1.5,0.5,1]);
 
 // London Bridge: the published score opens with a dotted rhythm - G held
 // 1.5 beats, A squeezed into 0.5 - on lines 1/3. Line 2 has no quick pair:
