@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -602,6 +602,20 @@ const rewritethestarsN = noteTokens(tuneBlock("rewritethestars"));
 assert.deepEqual(rewritethestarsN.slice(0, 5).map(n => n.pitch), ["A#", "A#", "A#", "C", "D"]);
 assert.deepEqual(rewritethestarsN.slice(0, 5).map(n => n.beats), [0.5, 0.5, 0.5, 1, 1]);
 assert.deepEqual(rewritethestarsN.slice(13, 16).map(n => n.beats), [1.5, 0.5, 2.5]);
+
+
+// Bohemian Rhapsody: Betacustic beginner sheet (Musicnotes
+// MN0227086, B-flat major, q=60), page-1 preview (8 bars,
+// lettered heads, mixed meters: bar 3 is 5/4). The opening
+// rocks on B-flat (A# on the gig board) in eighths into
+// quarters; bar 5 ties an eighth D into a dotted quarter
+// (merged to a 2-beat hold); bar 6 ends on B-flat 3, which
+// the gig board folds up an octave (pitch class checked).
+// Rests are dropped.
+const bohemianrhapsodyN = noteTokens(tuneBlock("bohemianrhapsody"));
+assert.deepEqual(bohemianrhapsodyN.slice(0, 5).map(n => n.pitch), ["A#", "A#", "A#", "A#", "A#"]);
+assert.deepEqual(bohemianrhapsodyN.slice(0, 5).map(n => n.beats), [0.5, 0.5, 0.5, 1, 1]);
+assert.deepEqual(bohemianrhapsodyN.slice(24, 29).map(n => n.beats), [0.5, 0.5, 0.5, 2, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
