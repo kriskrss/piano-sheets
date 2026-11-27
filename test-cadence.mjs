@@ -72,6 +72,20 @@ assert.deepEqual(hed.slice(0, 23).map(n => n.key),
   [3,6,8,7,6, 10,9,14,13, 7,10,12,11,10, 14,13,11, 10,12,11,9,11,7],
   "Hedwig Gigglescape notes must pin lower/higher-half keys with line 3 on low B (key 7)");
 
+// London Bridge: even quarters, only the final note held (no eighth-pair quicks)
+const lon = noteTokens(tuneBlock("londonbridge"));
+assert.deepEqual(lon.slice(0, 7).map(n => n.beats), [1,1,1,1,1,1,2]);
+assert.deepEqual(lon.slice(7, 13).map(n => n.beats), [1,1,1,1,1,2]);
+
+// Rain, Rain: running-eighths standard, every line totals exactly 4 beats
+const rain = noteTokens(tuneBlock("rainrain"));
+const rainLines = [[0,5],[5,12],[12,19],[19,26]];
+for (const [a,b] of rainLines) {
+  const total = rain.slice(a,b).reduce((s,n) => s + n.beats, 0);
+  assert.equal(total, 4, `rainrain notes ${a}-${b} must total 4 beats, got ${total}`);
+}
+assert.deepEqual(rain.slice(0,5).map(n => n.beats), [1,1,0.5,0.5,1]);
+
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
   assert.ok(html.includes(sym), `missing ${sym}`);
