@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania","godzilla"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -746,6 +746,18 @@ const megaN = noteTokens(tuneBlock("megalovania"));
 assert.deepEqual(megaN.slice(0, 5).map(n => n.pitch), ["D", "D", "D+", "A", "G#"]);
 assert.deepEqual(megaN.slice(0, 5).map(n => n.beats), [0.5, 0.5, 1, 1, 1]);
 assert.deepEqual(megaN.slice(35, 40).map(n => n.beats), [1, 1, 0.5, 0.5, 0.5]);
+
+
+// Godzilla Theme (Betacustic beginner sheet MN0233375),
+// page-1 preview: the slow chromatic creep (marked 90) and
+// the march (marked 150; the app's single bpm uses 150).
+// Bar 4's B half note ties through bar 5, merged and split
+// at the line break as 4 + 2; bar 8 is a full-bar rest and
+// is skipped. Everything below C4 folds +12 on the gig board.
+const godzillaN = noteTokens(tuneBlock("godzilla"));
+assert.deepEqual(godzillaN.slice(0, 5).map(n => n.pitch), ["E", "G#", "D", "D#", "A"]);
+assert.deepEqual(godzillaN.slice(0, 5).map(n => n.beats), [4, 1, 1, 1, 1]);
+assert.deepEqual(godzillaN.slice(24, 30).map(n => n.beats), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
