@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -242,6 +242,16 @@ assert.deepEqual(hf.slice(0, 3).map(n => n.beats), [1,0.5,0.75]);
 const br = noteTokens(tuneBlock("wedonttalkaboutbruno"));
 assert.deepEqual(br.slice(0, 3).map(n => n.pitch), ["D#+","A","D#+"]);
 assert.deepEqual(br.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
+
+// A Whole New World: Betacustic beginner sheet (Musicnotes
+// MN0231731, D major, 4/4, q=80; link via the SLOW tutorial twin -
+// the main video's description carried no sheet link), page-1
+// preview (10 bars): paired-eighth phrases with slur arcs, a D#
+// chromatic note in the Em6 bar, low A whole notes. Range A3-G4
+// sits under the Gigglescape board, so gig plays +12.
+const wn = noteTokens(tuneBlock("awholenewworld"));
+assert.deepEqual(wn.slice(0, 3).map(n => n.pitch), ["F#+","E+","G+"]);
+assert.deepEqual(wn.slice(0, 3).map(n => n.beats), [1,0.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
