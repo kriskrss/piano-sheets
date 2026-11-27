@@ -122,13 +122,15 @@ assert.deepEqual(sw.slice(0, 5).map(n => n.pitch), ["G","G","G","C+","G"]);
 assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.33,0.33,0.33,2,2]);
 assert.deepEqual(sw.slice(5, 10).map(n => n.beats), [0.33,0.33,0.33,2,1]);
 
-// Jurassic Park: rhythm from the timed letter-grid transcription of the
-// theme (onset spacing in the MuseScore-derived grid, 16th-note units):
-// two quick notes into a dotted-half hold. Pitches: La Touche Musicale
-// and pianoletternotes C-major letter notes.
+// Jurassic Park: re-encoded Nov 2026 from the Betacustic beginner
+// sheet (Musicnotes MN0252051, C major, 4/4, q=100), page-1 preview
+// (pickup + 14 bars): dotted-quarter + eighth pickup, dotted-half
+// bars answered by an eighth-note pair, dotted-quarter/eighth
+// figure bars. The sheet marks q=100, so bpm is 100 (was 76).
 const jp = noteTokens(tuneBlock("jurassicpark"));
-assert.deepEqual(jp.slice(0, 3).map(n => n.pitch), ["C+","B","C+"]);
-assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
+assert.deepEqual(jp.slice(0, 2).map(n => n.pitch), ["C+","B"]);
+assert.deepEqual(jp.slice(0, 2).map(n => n.beats), [1.5,0.5]);
+assert.deepEqual(jp.slice(2, 5).map(n => n.beats), [3,0.5,0.5]);
 
 // Bare Necessities: rhythm from the published piano/vocal score (the
 // SheetMusic-Free PVG engraving of the Gilkyson original): "Look for
