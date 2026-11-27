@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -432,6 +432,19 @@ assert.deepEqual(miraculousN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 const happybirthdayN = noteTokens(tuneBlock("happybirthday"));
 assert.deepEqual(happybirthdayN.slice(0, 2).map(n => n.pitch), ["C", "C"]);
 assert.deepEqual(happybirthdayN.slice(0, 2).map(n => n.beats), [0.5, 0.5]);
+
+
+// All Of Me: Betacustic beginner sheet (Musicnotes MN0235831,
+// E minor, 4/4, q=120), page-1 preview (12 bars, lettered heads).
+// Bars 1-4 share one figure: dotted quarter, eighth, quarter
+// rest, quarter - the rests are dropped here (the app has no
+// rests), so each of those lines totals 3 beats of notes.
+// Bar 5 opens with a half rest (also dropped), bar 9's quarter
+// rest likewise. Values rest on flags, dots and bar arithmetic;
+// head fill is not trusted.
+const allofmeN = noteTokens(tuneBlock("allofme"));
+assert.deepEqual(allofmeN.slice(0, 3).map(n => n.pitch), ["B", "A", "B"]);
+assert.deepEqual(allofmeN.slice(0, 3).map(n => n.beats), [1.5, 0.5, 1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
