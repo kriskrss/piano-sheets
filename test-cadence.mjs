@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -631,6 +631,21 @@ const riverflowsinyouN = noteTokens(tuneBlock("riverflowsinyou"));
 assert.deepEqual(riverflowsinyouN.slice(0, 4).map(n => n.pitch), ["C", "B", "C", "B"]);
 assert.deepEqual(riverflowsinyouN.slice(0, 4).map(n => n.beats), [1, 1, 1, 1]);
 assert.deepEqual(riverflowsinyouN.slice(4, 10).map(n => n.beats), [1, 1, 1, 3, 0.5, 0.5]);
+
+
+// Fly Me To The Moon: Betacustic beginner sheet (Musicnotes
+// MN0233978, A minor, 4/4, q=80), page-1 preview (14 bars,
+// lettered heads). Every phrase walks down in the same
+// dotted pattern (dotted quarter, eighth, two quarters);
+// bars 4 and 11 are whole notes. Bar 7 sharpens the G
+// (E major chord), bar 8 holds a dotted-half C4 into a C#
+// quarter, and bar 12's B3 folds up an octave on the gig
+// board (pitch class checked). Rests are dropped.
+const flymetothemoonN = noteTokens(tuneBlock("flymetothemoon"));
+assert.deepEqual(flymetothemoonN.slice(0, 4).map(n => n.pitch), ["C", "B", "A", "G"]);
+assert.deepEqual(flymetothemoonN.slice(0, 4).map(n => n.beats), [1.5, 0.5, 1, 1]);
+assert.deepEqual(flymetothemoonN.slice(21, 25).map(n => n.pitch), ["G#", "F", "E", "D"]);
+assert.deepEqual(flymetothemoonN.slice(21, 25).map(n => n.beats), [1.5, 0.5, 1, 1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
