@@ -153,6 +153,19 @@ const lig = noteTokens(tuneBlock("letitgo"));
 assert.deepEqual(lig.slice(0, 3).map(n => n.pitch), ["A","B","C+"]);
 assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
 
+// Itsy Bitsy Spider: rhythm from the engraved PianoLessons4Children
+// C-major score (4/4, lyrics underlaid): the whole tune lilts in
+// dotted-eighth + sixteenth pairs (0.75/0.25); "spi" and phrase peaks
+// are quarters, phrase-final notes carry the score's quarter rest in
+// their hold. Gig line totals: 8.5 / 8 / 8 / 7 / 4.75.
+const its = noteTokens(tuneBlock("itsy"));
+assert.deepEqual(its.slice(0, 12).map(n => n.beats),
+  [0.5,0.75,0.25,0.75,0.25,1,0.75,0.25,0.75,0.25,1,2]);
+for (const [a, b, tot] of [[0,12,8.5],[12,22,8],[22,33,8],[33,43,7],[43,47,4.75]]) {
+  const total = its.slice(a, b).reduce((sum, n) => sum + n.beats, 0);
+  assert.ok(Math.abs(total - tot) < 0.01, `itsy gig notes ${a}-${b} must total ${tot}, got ${total}`);
+}
+
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
   assert.ok(html.includes(sym), `missing ${sym}`);
