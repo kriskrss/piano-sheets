@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -355,6 +355,16 @@ assert.deepEqual(sh.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 const swedenN = noteTokens(tuneBlock("sweden"));
 assert.deepEqual(swedenN.slice(0, 3).map(n => n.pitch), ["G", "D+", "A"]);
 assert.deepEqual(swedenN.slice(0, 3).map(n => n.beats), [2, 2, 2]);
+
+// Coffin Dance (Astronomia): Betacustic beginner sheet
+// (Musicnotes MN0227183, A minor, 4/4, q = 70), page-1 preview
+// (10 bars, lettered heads). Bars 1-4 are straight eighth-note
+// riff bars; bars 5-6 and their repeat in 9-10 mix quarters with
+// beamed eighth pairs; bars 7-8 jump A4 to A5 in eighths after a
+// quarter. Every bar totals 4 by beams and arithmetic.
+const coffindanceN = noteTokens(tuneBlock("coffindance"));
+assert.deepEqual(coffindanceN.slice(0, 3).map(n => n.pitch), ["C+", "C+", "C+"]);
+assert.deepEqual(coffindanceN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
