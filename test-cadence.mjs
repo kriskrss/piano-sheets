@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -108,6 +108,19 @@ for (const [a,b] of rainLines) {
   assert.equal(total, 4, `rainrain notes ${a}-${b} must total 4 beats, got ${total}`);
 }
 assert.deepEqual(rain.slice(0,5).map(n => n.beats), [1,1,0.5,0.5,1]);
+
+// Star Wars: the triplet pickup becomes three quick Gs, then two held
+// notes (Hoffman Academy's G-major lesson transposed to C; La Touche
+// Musicale's C-major letter notes agree on the pitches).
+const sw = noteTokens(tuneBlock("starwars"));
+assert.deepEqual(sw.slice(0, 5).map(n => n.pitch), ["G","G","G","C+","G"]);
+assert.deepEqual(sw.slice(0, 5).map(n => n.beats), [0.5,0.5,0.5,2,2]);
+
+// Jurassic Park: slow held-note theme; La Touche Musicale and
+// pianoletternotes C-major letter notes agree on this pitch sequence.
+const jp = noteTokens(tuneBlock("jurassicpark"));
+assert.deepEqual(jp.slice(0, 3).map(n => n.pitch), ["C+","B","C+"]);
+assert.deepEqual(jp.slice(0, 3).map(n => n.beats), [2,1,2]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
