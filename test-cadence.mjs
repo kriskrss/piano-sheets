@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -318,6 +318,18 @@ assert.deepEqual(hj.slice(0, 3).map(n => n.beats), [0.5,1,0.5]);
 const af = noteTokens(tuneBlock("allisfound"));
 assert.deepEqual(af.slice(0, 3).map(n => n.pitch), ["C+","D+","E+"]);
 assert.deepEqual(af.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
+
+// Somewhere Over The Rainbow: Betacustic beginner sheet
+// (Musicnotes MN0235134, C major, 4/4, q = 90), page-1 preview
+// (13 bars). Dotted-half F in bar 2; the dotted-quarter + eighth +
+// quarter + quarter figure repeats in bars 3, 4 and 11 (several
+// heads print hollow-looking; dots and bar arithmetic settle the
+// values). Bar 6's opening quarter rest cannot fold into bar 5's
+// whole note (cap), so it is omitted; bar 13's opening quarter rest
+// folds back into bar 12's tied B (2.5 + 1 = 3.5).
+const rb = noteTokens(tuneBlock("overtherainbow"));
+assert.deepEqual(rb.slice(0, 3).map(n => n.pitch), ["C+","F+","D+"]);
+assert.deepEqual(rb.slice(0, 3).map(n => n.beats), [4,3,1]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
