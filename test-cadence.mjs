@@ -89,6 +89,13 @@ assert.deepEqual(tbm.slice(14, 47).map(n => n.pitch),
   "Three Blind Mice middle/ending must follow the published figure");
 assert.equal(tbm[46].beats, 3, "Three Blind Mice final low C must be held");
 
+// Farmer in the Dell: "Heigh-ho" descends G G A G E C and the last line
+// starts on D (D E E D D C), per published letter-note editions.
+const frm = noteTokens(tuneBlock("farmer"));
+assert.deepEqual(frm.slice(12, 24).map(n => n.pitch.replace(/\d/g, "")),
+  ["G","G","A","G","E","C","D","E","E","D","D","C"],
+  "Farmer lines 3-4 must match the published melody");
+
 // Rain, Rain: running-eighths standard, every line totals exactly 4 beats
 const rain = noteTokens(tuneBlock("rainrain"));
 const rainLines = [[0,5],[5,12],[12,19],[19,26]];
