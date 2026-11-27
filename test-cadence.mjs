@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -707,6 +707,19 @@ const flowersN = noteTokens(tuneBlock("flowers"));
 assert.deepEqual(flowersN.slice(0, 3).map(n => n.pitch), ["C+", "B", "A"]);
 assert.deepEqual(flowersN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 1.5]);
 assert.deepEqual(flowersN.slice(6, 13).map(n => n.beats), [0.5, 0.5, 1.5, 0.5, 1, 1, 2.5]);
+
+
+// Peaches (Betacustic beginner sheet MN0274727, C major, 4/4,
+// q = 92), page-1 preview: 8 bars, lettered heads. Values settled
+// by bar arithmetic (hollow heads are halves in bars 2, 4 and 6
+// but a quarter in bar 1). Ties merged: bar 1's C pair, bars 3
+// and 7's D pairs, bar 8's A pair, and bar 5's B eighth into
+// bar 6's half note (2.5). The strain sits E3-E4, so the gig
+// plays it a uniform octave up - pitch classes must match.
+const peachesN = noteTokens(tuneBlock("peaches"));
+assert.deepEqual(peachesN.slice(0, 5).map(n => n.pitch), ["C+", "F-", "C+", "A", "F-"]);
+assert.deepEqual(peachesN.slice(0, 5).map(n => n.beats), [1, 0.5, 1, 0.5, 1]);
+assert.equal(peachesN[19].beats, 2.5, "Peaches bar 5-6 tied B must merge to 2.5 beats");
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
