@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -166,6 +166,14 @@ for (const [a, b, tot] of [[0,12,8.5],[12,22,8],[22,33,8],[33,43,7],[43,47,4.75]
   const total = its.slice(a, b).reduce((sum, n) => sum + n.beats, 0);
   assert.ok(Math.abs(total - tot) < 0.01, `itsy gig notes ${a}-${b} must total ${tot}, got ${total}`);
 }
+
+// Married Life (Up): Betacustic beginner sheet (Musicnotes MN0233977,
+// F major, 3/4, q=100), main strain bars 5-10: dotted-half F opening,
+// F A G eighth-note answer, rests folded into the preceding hold.
+const ml = noteTokens(tuneBlock("marriedlife"));
+assert.deepEqual(ml.slice(0, 4).map(n => n.pitch), ["F+","F+","A+","G+"]);
+assert.deepEqual(ml.slice(0, 4).map(n => n.beats), [3,0.5,0.5,0.5]);
+assert.equal(ml[8].beats, 2.5, "Married Life C+ must carry the score's rest in its hold");
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
