@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -560,6 +560,19 @@ const countonmeN = noteTokens(tuneBlock("countonme"));
 assert.deepEqual(countonmeN.slice(0, 3).map(n => n.pitch), ["G", "A", "C"]);
 assert.deepEqual(countonmeN.slice(0, 3).map(n => n.beats), [0.5, 0.5, 1.5]);
 assert.deepEqual(countonmeN.slice(5, 11).map(n => n.beats), [0.5, 0.5, 0.5, 0.5, 1, 1]);
+
+
+// Dance Monkey: Betacustic beginner sheet (Musicnotes
+// MN0236650, A minor, 4/4, q=98), page-1 preview (pickup +
+// 11 bars, lettered heads, full-size preview). The strain is
+// the signature riff: A-G rocking eighths with a held B4 in
+// every other bar (rests dropped). Bar 9 ends on a
+// sixteenth + dotted-eighth B pair (0.25 + 0.75), read from
+// the sub-beam and the dot after the second head.
+const dancemonkeyN = noteTokens(tuneBlock("dancemonkey"));
+assert.deepEqual(dancemonkeyN.slice(0, 4).map(n => n.pitch), ["A", "G", "A", "G"]);
+assert.deepEqual(dancemonkeyN.slice(0, 4).map(n => n.beats), [0.5, 0.5, 0.5, 0.5]);
+assert.deepEqual(dancemonkeyN.slice(54, 56).map(n => n.beats), [0.25, 0.75]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
