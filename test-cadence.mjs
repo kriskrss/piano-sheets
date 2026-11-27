@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -216,6 +216,15 @@ assert.deepEqual(ch.slice(12, 15).map(n => n.beats), [0.67,0.67,0.67]);
 const rm = noteTokens(tuneBlock("rememberme"));
 assert.deepEqual(rm.slice(0, 3).map(n => n.pitch), ["D+","E+","C+"]);
 assert.deepEqual(rm.slice(0, 3).map(n => n.beats), [1,1,2]);
+
+// He's A Pirate: Betacustic beginner sheet (Musicnotes MN0226291,
+// D minor, 6/8, dotted-quarter = 80, so bpm 120 in quarter beats):
+// the D gallop bars, then the D-D-E / F-F-G / E-E-D-C answer.
+// The low A3 sits under the Gigglescape board, so gig plays +12.
+const hp = noteTokens(tuneBlock("hesapirate"));
+assert.deepEqual(hp.slice(0, 4).map(n => n.beats), [1,0.5,1,0.5]);
+assert.deepEqual(hp.slice(27, 31).map(n => n.pitch), ["D+","D+","D+","E+"]);
+assert.deepEqual(hp.slice(27, 31).map(n => n.beats), [1,1,0.5,0.5]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
