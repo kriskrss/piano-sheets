@@ -143,9 +143,10 @@ const hk = noteTokens(tuneBlock("hakunamatata"));
 assert.deepEqual(hk.slice(0, 6).map(n => n.pitch), ["D","D#","D","D#","D","C"]);
 assert.deepEqual(hk.slice(0, 6).map(n => n.beats), [0.5,0.5,0.5,0.5,0.5,1.5]);
 
-// Let It Go: chorus only, in C major. Hoffman Academy's lesson and
-// musicpandit's letter notes agree: A B C / G G D, rising to G5 on
-// "I don't care".
+// Let It Go: chorus only, in C major. Rhythm from the engraved score in
+// Hal Leonard's "Really Easy Piano: 40 Disney Songs" (chorus bars):
+// quick pickup runs into held notes; the final line runs in eighths.
+// Pitches: Hoffman Academy's lesson and musicpandit's letter notes.
 const lig = noteTokens(tuneBlock("letitgo"));
 assert.deepEqual(lig.slice(0, 3).map(n => n.pitch), ["A","B","C+"]);
 assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,3]);
