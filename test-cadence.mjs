@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania","godzilla","thepianoduet","bloodymary","givethanks","yousay","hereiamtoworship","oceans"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou","wellerman","peppapig","tryeverything","countonme","dancemonkey","showyourself","rewritethestars","bohemianrhapsody","riverflowsinyou","flymetothemoon","leanonme","amazinggrace","goldenhour","whatawonderfulworld","flowers","peaches","wearethechampions","megalovania","godzilla","thepianoduet","bloodymary","givethanks","yousay","hereiamtoworship","oceans","amongusdrip"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -838,6 +838,21 @@ assert.deepEqual(oceansN.slice(0, 2).map(n => n.beats), [3, 1]);
 assert.deepEqual(oceansN.slice(5, 12).map(n => n.pitch), ["A", "B", "A", "B", "A", "C#", "D"]);
 assert.deepEqual(oceansN.slice(5, 12).map(n => n.beats), [0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25]);
 assert.deepEqual(oceansN.slice(36, 38).map(n => n.pitch), ["A4", "D5"]);
+
+// Among Us Drip Theme (Betacustic beginner sheet MN0251247,
+// A minor, quarter = 100), page-1 preview: the full riff in
+// eight bars. The six eighth notes after the quarter rest are
+// pinned here; bars 4 and 8 hold an Eb for two beats and run
+// two eighth-note triplets (0.33 each, as in the Star Wars
+// pin). The Eb heads print solid black and get a fresh flat
+// sign at every figure; the E naturals keep the plain
+// lettered heads, so the dip always comes back to E natural.
+const amongusN = noteTokens(tuneBlock("amongusdrip"));
+assert.deepEqual(amongusN.slice(0, 6).map(n => n.pitch), ["A", "C", "E", "D#", "E", "C"]);
+assert.deepEqual(amongusN.slice(0, 6).map(n => n.beats), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
+assert.deepEqual(amongusN.slice(16, 23).map(n => n.pitch), ["D#+", "D#", "E", "C", "D#", "E", "C"]);
+assert.deepEqual(amongusN.slice(16, 23).map(n => n.beats), [2, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33]);
+assert.deepEqual(amongusN.slice(46, 52).map(n => n.pitch), ["A4", "C5", "E5", "Eb5", "E5", "C5"]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
