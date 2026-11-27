@@ -47,7 +47,7 @@ const hot = noteTokens(tuneBlock("hotcross"));
 assert.ok(hot.some(n => n.beats === 0.5), "Hot Cross Buns must contain 0.5-beat notes");
 
 // No tune is left with uniform 1-beat notes (the jumbled-playback bug)
-for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite"]) {
+for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","londonbridge","rowboat","wheels","sleeping","lassie","itsy","threeblind","farmer","rainrain","hickory","starwars","jurassicpark","barenecessities","hakunamatata","letitgo","marriedlife","myheartwillgoon","pinkpanther","babyshark","canthelpfalling","rememberme","hesapirate","howfarillgo","wedonttalkaboutbruno","awholenewworld","athousandyears","perfect","amilliondreams","iseethelight","hallelujah","allisfound","overtherainbow","shallow","sweden","coffindance","gummybear","fnaf","gravityfalls","silentnight","miraculous","happybirthday","allofme","diewithasmile","furelise","faded","beautifulinwhite","someonelikeyou"]) {
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
@@ -493,6 +493,21 @@ assert.deepEqual(fadedN.slice(0, 4).map(n => n.beats), [1, 1, 1, 1]);
 const beautifulinwhiteN = noteTokens(tuneBlock("beautifulinwhite"));
 assert.deepEqual(beautifulinwhiteN.slice(0, 3).map(n => n.pitch), ["E", "D", "C"]);
 assert.deepEqual(beautifulinwhiteN.slice(0, 3).map(n => n.beats), [4, 4, 4]);
+
+
+// Someone Like You: Betacustic beginner sheet (Musicnotes
+// MN0236859, A major, 4/4, q=68), page-1 preview (11 bars,
+// lettered heads below the staff). The rocking cell is a
+// sixteenth + dotted eighth pair, then a dotted fall B-A;
+// bar 5 closes with a quarter-note triplet (0.67 each) and
+// bar 9 opens with an eighth triplet (0.33 each). Ties are
+// merged into single holds (bar 4 C# pair = 1, bar 6 C# =
+// 1.75, bar 8 A pair = 1). Quarter rests opening most bars
+// are dropped. Gig plays +12 (the tune sits A3-F#4, below
+// the gig board's home octave); pitch classes verified.
+const someonelikeyouN = noteTokens(tuneBlock("someonelikeyou"));
+assert.deepEqual(someonelikeyouN.slice(1, 5).map(n => n.pitch), ["E", "C#", "B", "A"]);
+assert.deepEqual(someonelikeyouN.slice(1, 5).map(n => n.beats), [0.5, 1.5, 0.25, 0.75]);
 
 // Playback + tutorial must consume the same durations
 for (const sym of ["function tokenBeats", "function playTune", "function stopPlayback", "AudioContext"]) {
