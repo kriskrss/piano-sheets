@@ -72,10 +72,11 @@ assert.deepEqual(hed.slice(0, 23).map(n => n.key),
   [3,6,8,7,6, 10,9,14,13, 7,10,12,11,10, 14,13,11, 10,12,11,9,11,7],
   "Hedwig Gigglescape notes must pin lower/higher-half keys with line 3 on low B (key 7)");
 
-// London Bridge: even quarters, only the final note held (no eighth-pair quicks)
+// London Bridge: published score opens with quick notes (dotted rhythm),
+// so lines 1/3 carry the A-G eighth pair and line 2 the E-F eighth pair
 const lon = noteTokens(tuneBlock("londonbridge"));
-assert.deepEqual(lon.slice(0, 7).map(n => n.beats), [1,1,1,1,1,1,2]);
-assert.deepEqual(lon.slice(7, 13).map(n => n.beats), [1,1,1,1,1,2]);
+assert.deepEqual(lon.slice(0, 7).map(n => n.beats), [1,0.5,0.5,1,1,1,2]);
+assert.deepEqual(lon.slice(7, 13).map(n => n.beats), [1,1,1,0.5,0.5,2]);
 
 // Rain, Rain: running-eighths standard, every line totals exactly 4 beats
 const rain = noteTokens(tuneBlock("rainrain"));
