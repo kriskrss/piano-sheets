@@ -875,4 +875,22 @@ for (const sym of ["function tokenBeats", "function playTune", "function stopPla
 assert.ok(html.includes('id="playBtn"'), "missing Play button");
 assert.ok(html.includes('id="tempoRange"'), "missing tempo control");
 
+// YouTube tutorial links (Nov 27, 2026, Sai's word: a video link for each
+// tune). Every yt value must be a canonical watch URL, and every tune in
+// the app must carry one - the intended set is the full tune set.
+const ytRe = /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/;
+const ytPairs = [...html.matchAll(/\{ id:"([^"]+)",[^\n]*?yt:"([^"]+)"/g)];
+for (const [tid, url] of ytPairs.map(m => [m[1], m[2]])) {
+  assert.ok(ytRe.test(url), `${tid}: malformed yt link ${url}`);
+}
+const allTuneIds = [...html.matchAll(/\{ id:"([^"]+)"/g)].map(m => m[1]);
+assert.equal(ytPairs.length, allTuneIds.length,
+  `yt links on ${ytPairs.length} of ${allTuneIds.length} tunes`);
+assert.deepEqual(ytPairs.map(m => m[1]).sort(), [...allTuneIds].sort(),
+  "the set of tunes carrying yt must equal the full tune set");
+assert.ok(tuneBlock("hedwig").includes('yt:"https://www.youtube.com/watch?v=XEo6eeTTaDQ"'),
+  "Hedwig yt link must stay Sai's chosen SLOW Betacustic tutorial");
+assert.ok(tuneBlock("interstellar").includes('yt:"https://www.youtube.com/watch?v=OQeUvNHR0Ac"'),
+  "Interstellar yt link must stay the reference video Sai sent");
+
 console.log("cadence ok:", bpms.length, "tunes with bpm");
