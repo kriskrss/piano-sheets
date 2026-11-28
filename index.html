@@ -331,7 +331,7 @@
 const GROUPS = ["Movie themes","Pop favorites","Games & TV themes","Classics","Worship","Toddler rhymes - Set 1","Toddler rhymes - Set 2"];
 /* Tunes whose rhythm (rests) is not yet fully verified against the sheet source.
    Shown with a "Rhythm check pending" chip. Remove an id once its rests are verified. */
-const RHYTHM_CHECK_PENDING = new Set(["itsy","leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"]);
+const RHYTHM_CHECK_PENDING = new Set(["leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"]);
 const TUNES = [
 { id:"interstellar", title:"Interstellar - Main Theme", group:"Movie themes", glyph:"&#9834;", bpm:72, yt:"https://www.youtube.com/watch?v=OQeUvNHR0Ac", meter:[4,4],
   tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
@@ -427,10 +427,10 @@ const TUNES = [
   tip:"This is a dancing game. A child stands in the middle and does an action on \"this way and that\", and everyone copies.\nSecond verse: Laddie. Same notes.",
   casio:{ startKey:8, start:"Start on middle C (C4). G3 is the G just below it.",
     lines:[["C4 E4 G4 A4:0.5 G4:0.5 F4","Did you ev-er see a las-sie"],["E4 C4 C4:0.5 D4:0.5 G3 G3","a las-sie, a las-sie"],["E4 C4 C4:0.5 E4:0.5 G4 A4 G4 F4","Did you ev-er see a las-sie go"],["E4 C4 C4:0.5 D4:0.5 G3 G3","this way and that? Go"],["C4:3","this way and that (hold)"],["C4 D4 G3 G3","Go this way and that way"],["E4 C4 C4:0.5 D4:0.5 G3 G3","and this way and that way"],["E4 C4 C4:0.5 E4:0.5 G4 A4 G4 F4","Did you ev-er see a las-sie go"],["E4 C4 C4:0.5 D4:0.5 G3 G3","this way and that?"],["C4:3","(hold)"]] } },
-{ id:"itsy", title:"The Itsy Bitsy Spider", group:"Toddler rhymes - Set 2", glyph:"I", bpm:112, yt:"https://www.youtube.com/watch?v=OFLNVniyx_s", meter:[4,4], pickup:0.5,
-  tip:"G- is the G just left of the middle C.",
-  casio:{ startKey:8, start:"Start on middle C (C4). G3 is the G just below it.",
-    lines:[["C4:0.5 C4:0.75 C4:0.25 D4:0.75 E4:0.25 E4 E4:0.75 D4:0.25 C4:0.75 D4:0.25 E4 C4:1 R:1","The it-sy bit-sy spi-der went up the wa-ter spout"],["E4 E4:0.75 F4:0.25 G4 G4 F4:0.75 E4:0.25 F4:0.75 G4:0.25 E4:1 R:1","Down came the rain and washed the spi-der out"],["C4 C4:0.75 D4:0.25 E4 E4 E4:0.75 D4:0.25 C4:0.75 D4:0.25 E4 C4","Out came the sun and dried up all the rain"],["G3:0.75 G3:0.25 C4:0.75 C4:0.25 C4:0.75 D4:0.25 E4 E4:0.75 E4:0.25 D4:1 R:1","And the it-sy bit-sy spi-der"],["C4:0.75 D4:0.25 E4:0.75 C4:3","went up the spout a-gain"]] } },
+{ id:"itsy", title:"The Itsy Bitsy Spider", group:"Toddler rhymes - Set 2", glyph:"I", bpm:112, yt:"https://www.youtube.com/watch?v=OFLNVniyx_s", meter:[6,8], pickup:0.5,
+  tip:"In 6/8 time with a quick pickup on G. The melody sits right around middle C, dipping down to G and B below it.",
+  casio:{ startKey:5, start:"Start on G3, the G just below middle C (C4). B3 is the B just below C4; the rest sits around C4.",
+    lines:[["G3:0.5","The"],["C4:1 E4:0.5 C4:1 E4:0.5","i-tsy bi-tsy"],["E4:1.5 D4:1 E4:0.5","spi-der climbed"],["C4:1 B3:0.5 C4:1 E4:0.5","up the wa-ter-"],["C4:3","spout"],["E4:1.5 D4:1 E4:0.5","Down came the"],["E4:1.5 E4:1.5","rain and"],["D4:1 C4:0.5 D4:1 E4:0.5","washed the spi-der"],["C4:3","out"],["C4:1.5 C4:1 D4:0.5","Out came the"],["E4:1.5 E4:1.5","sun and"],["D4:1 C4:0.5 D4:1 E4:0.5","dried up all the"],["D4:1.5 G3:1 G3:0.5","rain And the"],["C4:1 E4:0.5 C4:1 E4:0.5","i-tsy bi-tsy"],["E4:1.5 D4:1 E4:0.5","spi-der climbed"],["C4:1 B3:0.5 C4:1 E4:0.5","up the spout a-"],["C4:1.5~ C4:1","gain"]] } },
 { id:"threeblind", title:"Three Blind Mice", group:"Toddler rhymes - Set 2", glyph:"3", bpm:120, yt:"https://www.youtube.com/watch?v=klbRGq95uCQ", meter:[6,8],
   tip:"C+ is the top C, the last white key. Sing the last part slowly.",
   casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4. The high C is C5.",
