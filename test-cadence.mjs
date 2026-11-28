@@ -1078,13 +1078,11 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES (45 complete tunes pass strict bar-sum checks)
+// Bar-sum validation across TUNES (51 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
-  "awholenewworld","canthelpfalling","countonme","dancemonkey","diewithasmile",
-  "flowers","flymetothemoon","godzilla","itsy","leanonme","letitgo","marriedlife",
-  "megalovania","myheartwillgoon","peaches","pinkpanther","riverflowsinyou",
-  "showyourself","someonelikeyou","wearethechampions","wedonttalkaboutbruno",
-  "whatawonderfulworld"
+  "countonme","dancemonkey","flowers","godzilla","itsy","leanonme","marriedlife",
+  "myheartwillgoon","peaches","pinkpanther","riverflowsinyou","showyourself",
+  "someonelikeyou","wearethechampions","wedonttalkaboutbruno","whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1124,10 +1122,10 @@ for (const t of api.TUNES) {
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
 }
-assert.equal(barValidatedCount, 45, "expected 45 bar-sum validated tunes");
+assert.equal(barValidatedCount, 51, "expected 51 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
-for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate"]) {
+for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
