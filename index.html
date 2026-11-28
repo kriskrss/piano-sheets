@@ -251,7 +251,7 @@
   <div class="rhythmhint">Small number under each note = beats it lasts. &#189; is quick, 2&#8211;3 is a hold.</div>
   <div class="fcontrols">
     <button class="pill green" id="playBtn">&#9654; Play tune</button>
-    <label class="tempo">Tempo <input id="tempoRange" type="range" min="50" max="160" step="2" value="100"><span id="tempoVal"></span></label>
+    <label class="tempo">Tempo <input id="tempoRange" type="range" min="36" max="200" step="1" value="100"><span id="tempoVal"></span></label>
     <button class="pill green" id="followBtn">Follow along</button>
     <button class="pill" id="nextNoteBtn" style="display:none">Next note</button>
     <button class="ghost" id="resetBtn" style="display:none">Start over</button>
@@ -763,7 +763,7 @@ const TUNES = [
 const PIANO_NAMES = { gig:"Gigglescape toy piano", casio:"Casio CT-X700" };
 let piano = localStorage.getItem("pianoSheetsPiano") || "gig";
 if(!PIANO_NAMES[piano]) piano = "gig";
-let currentId = null, follow = false, noteIdx = -1, wakeLock = null;
+let currentId = null, follow = false, noteIdx = -1, wakeLock = null, currentBpm = 100;
 let audioCtx = null, masterGain = null, playbackTimers = [], playing = false, currentSeq = [];
 
 /* ============ RHYTHM + PITCH ============ */
@@ -932,7 +932,18 @@ function playToneAt(midi, when, slotSec){
   osc.stop(gateEnd + 0.02); osc2.stop(gateEnd + 0.02);
   return { g, osc, osc2 };
 }
-function tempoBpm(){ return parseInt($("#tempoRange").value,10) || 100; }
+function setTempo(bpm){
+  currentBpm = bpm || 100;
+  const el = $("#tempoRange");
+  if(el){
+    if(currentBpm < parseFloat(el.min)) el.min = String(currentBpm);
+    if(currentBpm > parseFloat(el.max)) el.max = String(currentBpm);
+    el.value = String(currentBpm);
+  }
+  const val = $("#tempoVal");
+  if(val) val.textContent = currentBpm + " bpm";
+}
+function tempoBpm(){ return currentBpm; }
 function stopPlayback(){
   playbackTimers.forEach(clearTimeout); playbackTimers = [];
   dampStepVoice();
@@ -1136,8 +1147,7 @@ function renderFocus(scroll){
   else ytEl.style.display = "none";
   const idx = TUNES.indexOf(t);
   $("#fProgress").textContent = (idx+1) + " of " + TUNES.length;
-  const tempoEl = $("#tempoRange"); tempoEl.value = t.bpm || 100;
-  $("#tempoVal").textContent = (t.bpm || 100) + " bpm";
+  setTempo(t.bpm || 100);
   updateFollowUI();
   if(scroll) focusEl.scrollTop = 0;
 }
@@ -1174,7 +1184,7 @@ function stepNote(){
   }
 }
 $("#playBtn").addEventListener("click", playTune);
-$("#tempoRange").addEventListener("input", e=>{ $("#tempoVal").textContent = e.target.value + " bpm"; if(playing) stopPlayback(); });
+$("#tempoRange").addEventListener("input", e=>{ setTempo(parseInt(e.target.value,10) || 100); if(playing) stopPlayback(); });
 $("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()){ dampStepVoice(); activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm())); } });
 $("#nextNoteBtn").addEventListener("click", stepNote);
 $("#resetBtn").addEventListener("click", ()=>{ follow = false; noteIdx = -1;

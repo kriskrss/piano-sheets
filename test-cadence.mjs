@@ -990,7 +990,23 @@ const sandbox = {
   }
 };
 sandbox.window = sandbox;
-vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, playToneAt, ensureAudio, setAudioCtx(c, m){ audioCtx = c; masterGain = m; } };", sandbox);
+// Browser-accurate <input type="range"> clamping/stepping simulation
+{
+  const tr = domMap.get("#tempoRange");
+  let _val = "100";
+  Object.defineProperty(tr, "value", {
+    get() { return _val; },
+    set(v) {
+      const min = parseFloat(tr.min), max = parseFloat(tr.max), step = parseFloat(tr.step) || 1;
+      let num = Math.max(min, Math.min(max, Number(v)));
+      num = min + Math.round((num - min) / step) * step;
+      if (num > max) num -= step;
+      _val = String(num);
+    }
+  });
+}
+
+vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, playToneAt, ensureAudio, setTempo, tempoBpm, setAudioCtx(c, m){ audioCtx = c; masterGain = m; } };", sandbox);
 const api = sandbox.__api;
 
 // Rest & tie token unit tests
@@ -1176,6 +1192,32 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
   const gateEnd2 = env2[env2.length - 1].t;
   assert.ok(gateEnd2 < slot16, `16th note gateEnd ${gateEnd2} must be < slotSec ${slot16}`);
   assert.ok(m2.oscs[0].stopped <= slot16 + 0.02, "16th note oscillator must stop cleanly");
+}
+
+// ============ Tempo honesty tests (Rank 4) ============
+{
+  const tempoAttrMatch = html.match(/<input[^>]*id="tempoRange"[^>]*>/);
+  assert.ok(tempoAttrMatch, "missing #tempoRange input");
+  const minM = tempoAttrMatch[0].match(/min="(\d+)"/);
+  const maxM = tempoAttrMatch[0].match(/max="(\d+)"/);
+  const stepM = tempoAttrMatch[0].match(/step="(\d+)"/);
+  assert.ok(minM && +minM[1] <= 40, `tempoRange min must be <= 40, got ${minM && minM[1]}`);
+  assert.ok(maxM && +maxM[1] >= 200, `tempoRange max must be >= 200, got ${maxM && maxM[1]}`);
+  assert.ok(stepM && +stepM[1] === 1, `tempoRange step must be 1, got ${stepM && stepM[1]}`);
+
+  const tr = domMap.get("#tempoRange");
+  const tv = domMap.get("#tempoVal");
+  for (const t of api.TUNES) {
+    api.setTempo(t.bpm);
+    assert.equal(api.tempoBpm(), t.bpm, `${t.id}: tempoBpm() must match written ${t.bpm}`);
+    assert.equal(tr.value, String(t.bpm), `${t.id}: slider value must equal written ${t.bpm}`);
+    assert.equal(tv.textContent, `${t.bpm} bpm`, `${t.id}: #tempoVal must equal "${t.bpm} bpm"`);
+  }
+  for (const [tid, expected] of [["sweden",44],["furelise",69],["athousandyears",75],["diewithasmile",75],["perfect",81],["gummybear",89],["bloodymary",103],["countonme",176],["toxic",180]]) {
+    const t = api.TUNES.find(x => x.id === tid);
+    api.setTempo(t.bpm);
+    assert.equal(api.tempoBpm(), expected, `${tid} tempo honesty check failed`);
+  }
 }
 
 console.log("cadence ok:", bpms.length, "tunes with bpm");
