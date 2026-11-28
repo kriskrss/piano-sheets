@@ -990,7 +990,7 @@ const sandbox = {
   }
 };
 sandbox.window = sandbox;
-vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi };", sandbox);
+vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, playToneAt, ensureAudio, setAudioCtx(c, m){ audioCtx = c; masterGain = m; } };", sandbox);
 const api = sandbox.__api;
 
 // Rest & tie token unit tests
@@ -1095,6 +1095,87 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.tiedContinuation), `${tid} must contain merged cross-bar ties`);
+}
+
+// ============ Envelope tests (mock AudioContext) ============
+{
+  const makeMockCtx = () => {
+    const gains = [];
+    const oscs = [];
+    const ctx = {
+      currentTime: 0,
+      state: "running",
+      destination: {},
+      createGain() {
+        const events = [];
+        const node = {
+          events,
+          gain: {
+            value: 1,
+            events,
+            setValueAtTime(v, t) { events.push({ op: "set", v, t }); },
+            linearRampToValueAtTime(v, t) { events.push({ op: "lin", v, t }); },
+            exponentialRampToValueAtTime(v, t) { events.push({ op: "exp", v, t }); },
+            cancelScheduledValues() {}
+          },
+          connect() {}
+        };
+        gains.push(node);
+        return node;
+      },
+      createOscillator() {
+        const osc = {
+          type: "sine",
+          frequency: { value: 440 },
+          started: null,
+          stopped: null,
+          connect() {},
+          start(t) { osc.started = t; },
+          stop(t) { osc.stopped = t; }
+        };
+        oscs.push(osc);
+        return osc;
+      }
+    };
+    return { ctx, gains, oscs };
+  };
+
+  function evalGainAt(events, t) {
+    let prev = events[0];
+    for (let i = 1; i < events.length; i++) {
+      const cur = events[i];
+      if (t <= cur.t) {
+        const frac = (t - prev.t) / (cur.t - prev.t);
+        if (cur.op === "lin") return prev.v + (cur.v - prev.v) * frac;
+        if (cur.op === "exp") return prev.v * Math.pow(cur.v / prev.v, frac);
+        return cur.v;
+      }
+      prev = cur;
+    }
+    return prev.v;
+  }
+
+  // Test 1: 4-beat whole note at 60 bpm (slotSec = 4.0) stays audible at 50% and 90%
+  const m1 = makeMockCtx();
+  api.setAudioCtx(m1.ctx, m1.ctx.createGain());
+  api.playToneAt(69, 0, 4.0);
+  const env1 = m1.gains[1].events; // [0]=master, [1]=g, [2]=g2
+  assert.ok(evalGainAt(env1, 0.005) >= 0.89, "attack must reach peak by 5ms");
+  assert.ok(evalGainAt(env1, 2.0) >= 0.30, `50% hold gain too low: ${evalGainAt(env1, 2.0)}`);
+  assert.ok(evalGainAt(env1, 3.6) >= 0.25, `90% hold gain too low: ${evalGainAt(env1, 3.6)}`);
+  const gateEnd1 = env1[env1.length - 1].t;
+  assert.ok(gateEnd1 > 3.9 && gateEnd1 <= 4.0, `gateEnd1 expected ~3.955, got ${gateEnd1}`);
+  assert.equal(env1[env1.length - 1].v, 0.0001);
+
+  // Test 2: Fast 16th note at 180 bpm (slotSec = 0.0833s) detaches before next onset
+  const m2 = makeMockCtx();
+  api.setAudioCtx(m2.ctx, m2.ctx.createGain());
+  const slot16 = (60 / 180) * 0.25;
+  api.playToneAt(72, 0, slot16);
+  const env2 = m2.gains[1].events;
+  const gateEnd2 = env2[env2.length - 1].t;
+  assert.ok(gateEnd2 < slot16, `16th note gateEnd ${gateEnd2} must be < slotSec ${slot16}`);
+  assert.ok(m2.oscs[0].stopped <= slot16 + 0.02, "16th note oscillator must stop cleanly");
 }
 
 console.log("cadence ok:", bpms.length, "tunes with bpm");

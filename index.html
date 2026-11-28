@@ -891,21 +891,51 @@ function ensureAudio(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   return true;
 }
-function playToneAt(midi, when, durSec){
+let activeStepVoice = null;
+function dampStepVoice(){
+  if(!activeStepVoice || !audioCtx) return;
+  try{
+    const { g, osc, osc2 } = activeStepVoice;
+    const now = audioCtx.currentTime;
+    if(g.gain.cancelScheduledValues) g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.4), now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+    osc.stop(now + 0.025); osc2.stop(now + 0.025);
+  }catch(e){}
+  activeStepVoice = null;
+}
+function playToneAt(midi, when, slotSec){
   const freq = 440 * Math.pow(2, (midi-69)/12);
   const osc = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), g = audioCtx.createGain();
   osc.type = "triangle"; osc.frequency.value = freq;
   osc2.type = "sine"; osc2.frequency.value = freq*2;
   const g2 = audioCtx.createGain(); g2.gain.value = 0.25;
+  const dur = Math.max(0.04, slotSec);
+  const attack = 0.005;
+  const gap = Math.min(0.045, dur * 0.12);
+  const gateEnd = when + Math.max(0.035, dur - gap);
+  const release = Math.min(0.035, (gateEnd - when) * 0.25);
+  const releaseStart = Math.max(when + attack + 0.005, gateEnd - release);
   g.gain.setValueAtTime(0.0001, when);
-  g.gain.exponentialRampToValueAtTime(0.9, when+0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, when + Math.max(0.12, durSec));
+  g.gain.linearRampToValueAtTime(0.9, when + attack);
+  if(releaseStart > when + 0.085){
+    g.gain.exponentialRampToValueAtTime(0.65, when + 0.085);
+    const holdSec = releaseStart - (when + 0.085);
+    const sustainEnd = Math.max(0.25, 0.65 * Math.exp(-holdSec / 2.6));
+    g.gain.exponentialRampToValueAtTime(sustainEnd, releaseStart);
+  } else {
+    g.gain.exponentialRampToValueAtTime(0.7, releaseStart);
+  }
+  g.gain.exponentialRampToValueAtTime(0.0001, gateEnd);
   osc.connect(g); osc2.connect(g2); g2.connect(g); g.connect(masterGain);
-  osc.start(when); osc2.start(when); osc.stop(when+durSec+0.05); osc2.stop(when+durSec+0.05);
+  osc.start(when); osc2.start(when);
+  osc.stop(gateEnd + 0.02); osc2.stop(gateEnd + 0.02);
+  return { g, osc, osc2 };
 }
 function tempoBpm(){ return parseInt($("#tempoRange").value,10) || 100; }
 function stopPlayback(){
   playbackTimers.forEach(clearTimeout); playbackTimers = [];
+  dampStepVoice();
   if(masterGain && audioCtx){ try{ masterGain.disconnect(); }catch(e){} masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5; routeToSpeaker(); }
   playing = false;
   const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
@@ -923,7 +953,7 @@ function playTune(){
   let offset = 0, lastLineEl = null;
   currentSeq.forEach((n,i)=>{
     if(n.kind==="note" && !n.tiedContinuation){
-      playToneAt(n.midi, t0 + offset, Math.max(0.12, n.totalBeats*beatSec*0.92));
+      playToneAt(n.midi, t0 + offset, n.totalBeats * beatSec);
     }
     const at = offset;
     playbackTimers.push(setTimeout(()=>{
@@ -1138,11 +1168,14 @@ function stepNote(){
   /* Tutorial cadence: sound the note for its full beat length, so a hold
      is heard as a hold and a half-beat as quick. */
   const n = pseq[noteIdx];
-  if(follow && n && ensureAudio()) playToneAt(n.midi, audioCtx.currentTime + 0.02, Math.max(0.12, n.totalBeats * (60/tempoBpm()) * 0.92));
+  if(follow && n && ensureAudio()){
+    dampStepVoice();
+    activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()));
+  }
 }
 $("#playBtn").addEventListener("click", playTune);
 $("#tempoRange").addEventListener("input", e=>{ $("#tempoVal").textContent = e.target.value + " bpm"; if(playing) stopPlayback(); });
-$("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()) playToneAt(n.midi, audioCtx.currentTime + 0.02, Math.max(0.12, n.totalBeats * (60/tempoBpm()) * 0.92)); });
+$("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()){ dampStepVoice(); activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm())); } });
 $("#nextNoteBtn").addEventListener("click", stepNote);
 $("#resetBtn").addEventListener("click", ()=>{ follow = false; noteIdx = -1;
   clearNoteHighlights(); updateFollowUI(); });
