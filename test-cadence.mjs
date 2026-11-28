@@ -307,7 +307,9 @@ for (const [a, b, tot] of [[0,13,8.5],[13,24,8],[24,35,8],[35,46,7],[46,50,4.75]
 const ml = gigTokens("marriedlife");
 assert.deepEqual(ml.slice(0, 4).map(n => n.pitch.replace(/[+-]/g, "")), ["F","F","A","G"]);
 assert.deepEqual(ml.slice(0, 4).map(n => n.beats), [3,0.5,0.5,0.5]);
-assert.equal(ml[8].beats, 2.5, "Married Life C+ must carry the score's rest in its hold");
+assert.equal(ml[8].beats, 2, "Married Life C+ is a half note before its unfolded eighth rest");
+const mlAll = gigAllTokens("marriedlife");
+assert.deepEqual(mlAll.slice(11, 13).map(n => [n.kind, n.beats]), [["note", 2], ["rest", 0.5]]);
 
 // My Heart Will Go On: Betacustic beginner sheet (Musicnotes MN0226803,
 // F major, 4/4, q=70): dotted-quarter + eighth F figure opens each
@@ -1078,11 +1080,11 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES (51 complete tunes pass strict bar-sum checks)
+// Bar-sum validation across TUNES (56 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
-  "countonme","dancemonkey","flowers","godzilla","itsy","leanonme","marriedlife",
-  "myheartwillgoon","peaches","pinkpanther","riverflowsinyou","showyourself",
-  "someonelikeyou","wearethechampions","wedonttalkaboutbruno","whatawonderfulworld"
+  "countonme","flowers","itsy","leanonme","peaches","pinkpanther",
+  "riverflowsinyou","showyourself","someonelikeyou","wearethechampions",
+  "whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1122,10 +1124,10 @@ for (const t of api.TUNES) {
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
 }
-assert.equal(barValidatedCount, 51, "expected 51 bar-sum validated tunes");
+assert.equal(barValidatedCount, 56, "expected 56 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
-for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania"]) {
+for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
