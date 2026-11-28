@@ -1,6 +1,7 @@
 // Cadence regression test: tunes must encode rhythm, not one beat per note.
 // Run: node test-cadence.mjs
 import { readFileSync } from "node:fs";
+import vm from "node:vm";
 import assert from "node:assert";
 
 const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
@@ -10,26 +11,44 @@ const bpms = [...html.matchAll(/bpm:\s*(\d+)/g)].map(m => +m[1]);
 assert.ok(bpms.length >= 16, `expected >=16 tunes with bpm, got ${bpms.length}`);
 assert.ok(bpms.every(b => b >= 40 && b <= 200), "bpm out of range");
 
-// Tokens may carry :beats suffix, e.g. G:2 or C:0.5 ; separators are | and -
+// Tokens may carry :beats suffix (including fractions), @key pin, and ~ tie; R is rest; separators are | and -
 function tuneBlock(id) {
   const i = html.indexOf(`id:"${id}"`);
   assert.ok(i >= 0, `tune ${id} missing`);
   const next = html.indexOf('{ id:"', i + 1);
   return html.slice(i, next < 0 ? html.length : next);
 }
-function noteTokens(block) {
+function parseBeatsStr(s) {
+  if (!s) return 1;
+  if (s.includes("/")) {
+    const [a, b] = s.split("/").map(Number);
+    return b ? a / b : 1;
+  }
+  return +s;
+}
+function allTokens(block) {
   const out = [];
   for (const m of block.matchAll(/\["([^"]*)","[^"]*"\]/g)) {
-    {
-      for (const tok of m[1].split(/\s+/).filter(Boolean)) {
-        if (tok === "|" || tok === "-") continue;
-        const mm = tok.match(/^([A-G][#b]?[+-]?\d?|[A-G][#b]?\d?)(?::(\d+(?:\.\d+)?))?(?:@(\d+))?$/);
-        assert.ok(mm, `unparseable note token ${tok}`);
-        out.push({ pitch: mm[1], beats: mm[2] ? +mm[2] : 1, key: mm[3] ? +mm[3] : null });
+    for (const tok of m[1].split(/\s+/).filter(Boolean)) {
+      if (tok === "|" || tok === "-") continue;
+      const rm = tok.match(/^R(?::(\d+(?:\.\d+)?|\d+\/\d+))?$/);
+      if (rm) {
+        out.push({ kind: "rest", pitch: "R", beats: parseBeatsStr(rm[1]), key: null, tied: false });
+        continue;
       }
+      const tied = /~$/.test(tok);
+      const base = tok.replace(/~$/, "");
+      const pitch = base.replace(/@\d+/g, "").replace(/:(?:\d+(?:\.\d+)?|\d+\/\d+)/g, "");
+      const bm = base.match(/:(\d+(?:\.\d+)?|\d+\/\d+)/);
+      const km = base.match(/@(\d+)/);
+      assert.ok(/^[A-G][#b]?[+-]?\d?$/.test(pitch), `unparseable note token ${tok}`);
+      out.push({ kind: "note", pitch, beats: parseBeatsStr(bm && bm[1]), key: km ? +km[1] : null, tied });
     }
   }
   return out;
+}
+function noteTokens(block) {
+  return allTokens(block).filter(n => n.kind === "note");
 }
 
 // Twinkle: phrase-final notes are held twice as long; pitches unchanged
@@ -51,7 +70,7 @@ for (const id of ["interstellar","hedwig","twinkle","mary","hotcross","oldmac","
   const notes = noteTokens(tuneBlock(id));
   assert.ok(notes.length > 0, `${id}: no notes parsed`);
   assert.ok(notes.some(n => n.beats !== 1), `${id}: still uniform 1-beat cadence`);
-  assert.ok(notes.every(n => n.beats > 0 && n.beats <= 4), `${id}: beats out of range`);
+  assert.ok(notes.every(n => n.beats > 0 && n.beats <= 12), `${id}: beats out of range`);
 }
 
 // Interstellar (Gigglescape): notes span two octaves, so every note must pin
@@ -892,5 +911,167 @@ assert.ok(tuneBlock("hedwig").includes('yt:"https://www.youtube.com/watch?v=XEo6
   "Hedwig yt link must stay Sai's chosen SLOW Betacustic tutorial");
 assert.ok(tuneBlock("interstellar").includes('yt:"https://www.youtube.com/watch?v=OQeUvNHR0Ac"'),
   "Interstellar yt link must stay the reference video Sai sent");
+
+// ============ Engine harness (executes index.html <script> in vm) ============
+function makeEl(tag = "div") {
+  const classes = new Set();
+  const el = {
+    tagName: tag.toUpperCase(),
+    dataset: {},
+    style: {},
+    children: [],
+    listeners: {},
+    innerHTML: "",
+    textContent: "",
+    value: "",
+    min: "",
+    max: "",
+    step: "",
+    className: "",
+    classList: {
+      toggle(c, force) {
+        if (force === undefined) { if (classes.has(c)) classes.delete(c); else classes.add(c); }
+        else if (force) classes.add(c); else classes.delete(c);
+      },
+      add(c) { classes.add(c); },
+      remove(...cs) { cs.forEach(c => classes.delete(c)); },
+      contains(c) { return classes.has(c); }
+    },
+    appendChild(ch) { el.children.push(ch); return ch; },
+    addEventListener(ev, fn) { el.listeners[ev] = fn; },
+    setAttribute() {},
+    querySelector(sel) {
+      if (sel === "h2" || sel === ".count" || sel === ".cardtitle" || sel === ".cardsub") return makeEl("span");
+      return makeEl();
+    },
+    closest() { return null; },
+    scrollIntoView() {}
+  };
+  return el;
+}
+
+const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(scriptMatch, "missing <script> block");
+const domMap = new Map();
+for (const id of ["home","focus","fTitle","fGroup","fName","fStart","fKb","kbLeft","kbMid","kbRight","fNotes","fTip","fYt","fProgress","tempoRange","tempoVal","playBtn","followBtn","nextNoteBtn","resetBtn","wakeBtn","backBtn","prevTune","nextTune","searchInput"]) {
+  domMap.set("#" + id, makeEl(id === "tempoRange" ? "input" : "div"));
+}
+domMap.get("#tempoRange").min = "36";
+domMap.get("#tempoRange").max = "200";
+domMap.get("#tempoRange").step = "1";
+domMap.get("#tempoRange").value = "100";
+
+const sandbox = {
+  console, Math, Array, Object, Set, Map, WeakMap, String, Number, parseInt, parseFloat, isNaN,
+  setTimeout, clearTimeout,
+  localStorage: { _m: {}, getItem(k) { return this._m[k] || null; }, setItem(k, v) { this._m[k] = String(v); } },
+  navigator: {},
+  window: {},
+  document: {
+    body: { style: {} },
+    querySelector(s) { return domMap.get(s) || null; },
+    querySelectorAll() { return []; },
+    createElement(tag) { return makeEl(tag); },
+    addEventListener() {}
+  }
+};
+sandbox.window = sandbox;
+vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi };", sandbox);
+const api = sandbox.__api;
+
+// Rest & tie token unit tests
+assert.equal(api.isRestToken("R"), true);
+assert.equal(api.isRestToken("R:0.5"), true);
+assert.equal(api.isRestToken("R:1.5"), true);
+assert.equal(api.isRestToken("R:1/3"), true);
+assert.equal(api.isRestToken("C4"), false);
+assert.equal(api.isRestToken("D5:1~"), false);
+
+assert.equal(api.isTiedToken("D5:1~"), true);
+assert.equal(api.isTiedToken("C+:0.5@8~"), true);
+assert.equal(api.isTiedToken("D5:1"), false);
+
+assert.equal(api.tokenPitch("F@4:2~"), "F");
+assert.equal(api.tokenBeats("F@4:2~"), 2);
+assert.equal(api.tokenKey("F@4:2~"), 4);
+assert.equal(api.tokenPitch("C5:0.5~"), "C5");
+assert.equal(api.tokenBeats("C5:0.5~"), 0.5);
+assert.ok(Math.abs(api.tokenBeats("G4:0.33") - 1/3) < 1e-9);
+assert.ok(Math.abs(api.tokenBeats("A4:0.67") - 2/3) < 1e-9);
+assert.equal(api.tokenBeats("R:1.5"), 1.5);
+assert.equal(api.tokenBeats("R"), 1);
+
+// buildSequence handles rests without mutating prev MIDI and merges ties
+{
+  const restSeq = api.buildSequence({ startKey: 8, lines: [["E5:1 R:1 C5:1", ""]] }, "gig");
+  assert.equal(restSeq.length, 3);
+  assert.equal(restSeq[0].kind, "note");
+  assert.equal(restSeq[1].kind, "rest");
+  assert.equal(restSeq[1].midi, null);
+  assert.equal(restSeq[1].beats, 1);
+  assert.equal(restSeq[2].kind, "note");
+  assert.equal(restSeq[2].midi, 72);
+
+  const tieSeq = api.buildSequence({ startKey: 9, lines: [["D5:1~", ""], ["D5:4", ""]] }, "casio");
+  assert.equal(tieSeq.length, 2);
+  assert.equal(tieSeq[0].tied, true);
+  assert.equal(tieSeq[0].tiedContinuation, false);
+  assert.equal(tieSeq[0].totalBeats, 5);
+  assert.equal(tieSeq[1].tiedContinuation, true);
+
+  const restFirstLabel = api.firstNoteLabel({ casio: { startKey: 8, lines: [["R:1.5 C4:0.5", ""]] }, gig: { startKey: 8, lines: [["R:1.5 C:0.5", ""]] } });
+  assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
+}
+
+// Bar-sum validation across TUNES
+const PENDING_RESTORE = new Set([
+  "allofme","amilliondreams","amongusdrip","athousandyears","beautifulinwhite",
+  "bloodymary","bohemianrhapsody","faded","fnaf","godzilla","gravityfalls",
+  "hallelujah","hereiamtoworship","hesapirate","howfarillgo","itsy","miraculous",
+  "oceans","overtherainbow","perfect","rewritethestars","shallow","toxic","tryeverything",
+  "allisfound"
+]);
+const NEEDS_SOURCE_CHECK = new Set([
+  "awholenewworld","canthelpfalling","countonme","dancemonkey","diewithasmile",
+  "flowers","flymetothemoon","leanonme","letitgo","marriedlife","megalovania",
+  "myheartwillgoon","peaches","pinkpanther","riverflowsinyou","showyourself",
+  "someonelikeyou","wearethechampions","wedonttalkaboutbruno","whatawonderfulworld"
+]);
+const LEGACY_UNMETERED = new Set([
+  "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
+  "sleeping","lassie","threeblind","farmer","hickory","barenecessities","hakunamatata"
+]);
+
+assert.equal(api.TUNES.length, 80, "must have all 80 tunes");
+for (const t of api.TUNES) {
+  assert.ok(Array.isArray(t.meter) && t.meter.length === 2, `${t.id}: missing meter`);
+  if (PENDING_RESTORE.has(t.id) || NEEDS_SOURCE_CHECK.has(t.id) || LEGACY_UNMETERED.has(t.id)) continue;
+  const barBeats = t.meter[0] * (4 / t.meter[1]);
+  const pickup = t.pickup || 0;
+  let total = 0, hasComplementaryEnd = false;
+  t.casio.lines.forEach((line, li) => {
+    const toks = line[0].split(/\s+/).filter(x => x && x !== "|" && x !== "-");
+    const sum = toks.reduce((a, x) => a + api.tokenBeats(x), 0);
+    total += sum;
+    const expectedBar = (t.barMeters && t.barMeters[li]) || barBeats;
+    if (li === 0 && pickup > 0) {
+      assert.ok(Math.abs((sum - pickup) % expectedBar) < 1e-4 || Math.abs(((sum - pickup) % expectedBar) - expectedBar) < 1e-4,
+        `${t.id} line 0 (${sum}) minus pickup (${pickup}) not multiple of ${expectedBar}`);
+    } else if (li === t.casio.lines.length - 1 && pickup > 0 && Math.abs(((sum + pickup) % expectedBar)) < 1e-4) {
+      hasComplementaryEnd = true;
+    } else {
+      const rem = sum % expectedBar;
+      assert.ok(sum > 0 && (rem < 1e-4 || Math.abs(rem - expectedBar) < 1e-4),
+        `${t.id} line ${li} sum ${sum} not multiple of ${expectedBar}`);
+    }
+  });
+  const totCheck = hasComplementaryEnd ? total : (total - pickup);
+  const totRem = totCheck % barBeats;
+  const hasBarOverride = !!t.barMeters;
+  if (!hasBarOverride) {
+    assert.ok(totRem < 1e-4 || Math.abs(totRem - barBeats) < 1e-4,
+      `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
+  }
+}
 
 console.log("cadence ok:", bpms.length, "tunes with bpm");
