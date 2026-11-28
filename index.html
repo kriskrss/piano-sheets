@@ -337,15 +337,54 @@ const TUNES = [
   tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
   gigStart:"Work in the middle of the piano.\nPlay the low note once, then its pattern. Slow and steady, one note per beat.\nThe note you keep coming back to is E, the 10th white key.",
   casio:{ startKey:4, start:"The low notes are F3, G3 and A3, below middle C (C4).\nThe note you keep coming back to is E5. The pattern notes climb A4, B4, C5, D5 under it.\nPlay the low note once, then its pattern. Slow and steady.",
-    lines:[["F3:2 | A4:0.5 E5:0.5 A4:0.5 E5:0.5",""],["G3:2 | B4:0.5 E5:0.5 B4:0.5 E5:0.5",""],["A3:2 | C5:0.5 E5:0.5 C5:0.5 E5:0.5",""],["G3:2 | D5:0.5 E5:0.5 D5:0.5 E5:0.5",""],["F5 G5 A5 G5:3","the turn"]] } },
+    lines:[["F3:2 | A4:0.5 E5:0.5 A4:0.5 E5:0.5",""],["G3:2 | B4:0.5 E5:0.5 B4:0.5 E5:0.5",""],["A3:2 | C5:0.5 E5:0.5 C5:0.5 E5:0.5",""],["G3:2 | D5:0.5 E5:0.5 D5:0.5 E5:0.5",""],["F5 G5 A5 G5:3","the turn"]],
+    twoHands:{
+      start:"Left hand (L, blue): hold F3, G3, A3 below middle C for 4 full beats each, then F2+C3 and G2+D3 on the turn.\nRight hand (R, green): rock steady half-beat notes between A4/B4/C5/D5 and E5.",
+      rh:[
+        ["A4:0.5 E5:0.5 A4:0.5 E5:0.5 A4:0.5 E5:0.5 A4:0.5 E5:0.5",""],
+        ["B4:0.5 E5:0.5 B4:0.5 E5:0.5 B4:0.5 E5:0.5 B4:0.5 E5:0.5",""],
+        ["C5:0.5 E5:0.5 C5:0.5 E5:0.5 C5:0.5 E5:0.5 C5:0.5 E5:0.5",""],
+        ["D5:0.5 E5:0.5 D5:0.5 E5:0.5 D5:0.5 E5:0.5 D5:0.5 E5:0.5",""],
+        ["F5:1 G5:1 A5:2 | G5:4","the turn"]
+      ],
+      lh:["F3:4","G3:4","A3:4","G3:4","F2+C3:4 | G2+D3:4"]
+    } } },
 { id:"hedwig", title:"Harry Potter - Hedwig's Theme", group:"Movie themes", glyph:"&#9834;", bpm:96, yt:"https://www.youtube.com/watch?v=XEo6eeTTaDQ", meter:[3,4], pickup:1,
   tip:"This is the famous opening, simplified to one finger, from Stefan Lechner's easy 3/4 arrangement of John Williams' theme. Sharps (#) are black keys: the black key just after the letter key.\nPlay it slowly. The tune sounds best unhurried.",
   casio:{ startKey:7, start:"Start on B3, the B just below middle C (C4).\nThis is the opening strain from Stefan Lechner's easy arrangement (E minor, 3/4). The score's B-flat is written as A# here.",
-    lines:[["B3 E4:1.5 G4:0.5 F#4","the famous opening"],["E4:2 B4",""],["C5:3",""],["F#4:3",""],["E4:1.5 G4:0.5 F#4",""],["F#4:2 C5",""],["A#4:3",""],["A4:2 B4",""],["E4:1.5 G4:0.5 F#4",""],["E4:2 B4",""]] } },
+    lines:[["B3 E4:1.5 G4:0.5 F#4","the famous opening"],["E4:2 B4",""],["C5:3",""],["F#4:3",""],["E4:1.5 G4:0.5 F#4",""],["F#4:2 C5",""],["A#4:3",""],["A4:2 B4",""],["E4:1.5 G4:0.5 F#4",""],["E4:2 B4",""]],
+    twoHands:{
+      start:"Left hand (L, blue): wait 1 beat for the pickup, then pinky (5) on E3 and thumb (1) on B3.\nRight hand (R, green): thumb (1) on B3 for the pickup, moving up to E4 and G4.",
+      tip:"Hold the left-hand E3+B3 across bars 1 and 2 (6 beats total) and again on the last two bars. Watch the black keys F#2+C#3 in bar 7.",
+      lh:[
+        "R:1 | E3+B3:3~",
+        "E3+B3:3",
+        "A2+E3:3",
+        "B2+F#3:3",
+        "E3+B3:3",
+        "B2+F#3:3",
+        "F#2+C#3:3",
+        "A2+E3:2 B2+F#3:1",
+        "E3+B3:3~",
+        "E3+B3:3"
+      ]
+    } } },
 { id:"twinkle", title:"Twinkle, Twinkle, Little Star", group:"Toddler rhymes - Set 1", glyph:"T", bpm:100, yt:"https://www.youtube.com/watch?v=VVLFrziDSvg", meter:[4,4],
   tip:"The ABC song and Baa, Baa, Black Sheep use this same tune.",
   casio:{ startKey:8, start:"Start on middle C (C4). All of this tune sits in the C4 to A4 range.",
-    lines:[["C4 C4 G4 G4 A4 A4 G4:2","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4:2","How I won-der what you are"],["G4 G4 F4 F4 E4 E4 D4:2","Up a-bove the world so high"],["G4 G4 F4 F4 E4 E4 D4:2","Like a dia-mond in the sky"],["C4 C4 G4 G4 A4 A4 G4:2","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4:2","How I won-der what you are"]] } },
+    lines:[["C4 C4 G4 G4 A4 A4 G4:2","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4:2","How I won-der what you are"],["G4 G4 F4 F4 E4 E4 D4:2","Up a-bove the world so high"],["G4 G4 F4 F4 E4 E4 D4:2","Like a dia-mond in the sky"],["C4 C4 G4 G4 A4 A4 G4:2","Twin-kle, twin-kle, lit-tle star"],["F4 F4 E4 E4 D4 D4 C4:2","How I won-der what you are"]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on C3, thumb (1) on G3 — one octave below middle C.\nRight hand (R, green): thumb (1) on middle C (C4).",
+      tip:"Your left hand stays right around C3 to A3 using easy two-note shapes. Hold each left-hand chord steady while your right hand plays the melody notes above it.",
+      lh:[
+        "C3+G3:4 | F3+A3:2 C3+E3:2",
+        "F3+A3:2 C3+G3:2 | B2+G3:2 C3+G3:2",
+        "C3+E3:2 B2+G3:2 | C3+G3:2 B2+G3:2",
+        "C3+E3:2 B2+G3:2 | C3+G3:2 G3:1 R:1",
+        "C3+G3:4 | F3+A3:2 C3+E3:2",
+        "F3+A3:2 C3+G3:2 | B2+G3:2 C3+E3+G3:2"
+      ]
+    } } },
 { id:"mary", title:"Mary Had a Little Lamb", group:"Toddler rhymes - Set 1", glyph:"M", bpm:112, yt:"https://www.youtube.com/watch?v=o_rUIudo7Uk", meter:[4,4],
   tip:"Hold the last C a little longer.",
   casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4.",
@@ -353,7 +392,17 @@ const TUNES = [
 { id:"hotcross", title:"Hot Cross Buns", group:"Toddler rhymes - Set 1", glyph:"H", bpm:120, yt:"https://www.youtube.com/watch?v=fM2xseupKlY", meter:[4,4],
   tip:"Only three notes in the whole song: E, D and C.",
   casio:{ startKey:10, start:"Start around middle C (C4). The first note is E4.",
-    lines:[["E4 D4 C4:2","Hot cross buns"],["E4 D4 C4:2","Hot cross buns"],["C4:0.5 C4:0.5 C4:0.5 C4:0.5 D4:0.5 D4:0.5 D4:0.5 D4:0.5","One a pen-ny, two a pen-ny"],["E4 D4 C4:2","Hot cross buns"]] } },
+    lines:[["E4 D4 C4:2","Hot cross buns"],["E4 D4 C4:2","Hot cross buns"],["C4:0.5 C4:0.5 C4:0.5 C4:0.5 D4:0.5 D4:0.5 D4:0.5 D4:0.5","One a pen-ny, two a pen-ny"],["E4 D4 C4:2","Hot cross buns"]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on C3, thumb (1) on G3 — step pinky one key left to B2 for the middle note.\nRight hand (R, green): finger 3 on E4, finger 2 on D4, thumb (1) on middle C (C4).",
+      tip:"Only two left-hand shapes in the whole song: C3+G3 and B2+G3. Keep your thumb steady on G3.",
+      lh:[
+        "C3+G3:1 B2+G3:1 C3+G3:2",
+        "C3+G3:1 B2+G3:1 C3+G3:2",
+        "C3+G3:2 B2+G3:2",
+        "C3+G3:1 B2+G3:1 C3+G3:2"
+      ]
+    } } },
 { id:"oldmac", title:"Old MacDonald Had a Farm", group:"Toddler rhymes - Set 1", glyph:"O", bpm:112, yt:"https://www.youtube.com/watch?v=6U0sdgd9J1s", meter:[4,4],
   tip:"These are the main two lines. Repeat them for every animal.",
   casio:{ startKey:8, start:"Start on middle C (C4).",
@@ -417,7 +466,21 @@ const TUNES = [
 { id:"letitgo", title:"Frozen - Let It Go", group:"Movie themes", glyph:"&#9834;", bpm:80, yt:"https://www.youtube.com/watch?v=nWACNtEK1oo", meter:[4,4],
   tip:"Elsa's song from Frozen, simplified to one finger. This is the verse from the Betacustic sheet - the snow glows white on the mountain tonight.",
   casio:{ startKey:18, start:"Start above middle C. The first note is F#5, the black key just after F5.",
-    lines:[["F#5:0.5 G5:0.5 B4:0.5 F#5:0.5 A5:0.5 G5:1.5","The snow glows white"],["F#5:0.5 G5:0.5 B4:0.5 G5:0.5 A5:0.5 F#5:1 A4:0.5","on the moun-tain to-night"],["E5:0.5 F#5:0.5 A4:0.5 E5:0.5 A5:0.5 F#5:1 A4:0.5","not a foot-print to be seen"],["D5:2 C5:2",""],["F#5:0.5 G5:0.5 B4:0.5 F#5:0.5 A5:0.5 G5:1.5","A king-dom of i-so-la-tion"],["G5:0.5 F#5:0.5 B4:0.5 G5:0.5 A5:0.5 F#5:1 A4:0.5","and it looks like I'm the queen"],["E5:0.5 F#5:0.5 A4:0.5 E5:0.5 A5:0.5 F#5:1 A4:0.5","The wind is howl-ing like this"],["D5:2 C#5:1 R:0.5 A4:0.5","swirl-ing storm in-side"]] } },
+    lines:[["F#5:0.5 G5:0.5 B4:0.5 F#5:0.5 A5:0.5 G5:1.5","The snow glows white"],["F#5:0.5 G5:0.5 B4:0.5 G5:0.5 A5:0.5 F#5:1 A4:0.5","on the moun-tain to-night"],["E5:0.5 F#5:0.5 A4:0.5 E5:0.5 A5:0.5 F#5:1 A4:0.5","not a foot-print to be seen"],["D5:2 C5:2",""],["F#5:0.5 G5:0.5 B4:0.5 F#5:0.5 A5:0.5 G5:1.5","A king-dom of i-so-la-tion"],["G5:0.5 F#5:0.5 B4:0.5 G5:0.5 A5:0.5 F#5:1 A4:0.5","and it looks like I'm the queen"],["E5:0.5 F#5:0.5 A4:0.5 E5:0.5 A5:0.5 F#5:1 A4:0.5","The wind is howl-ing like this"],["D5:2 C#5:1 R:0.5 A4:0.5","swirl-ing storm in-side"]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on E3, thumb (1) on B3 — then shift down the Em, C, D, Am fifths.\nRight hand (R, green): starts high on F#5 (black key after F5).",
+      tip:"Every left-hand bar is one slow 4-beat open fifth (Em - C - D - Am twice). Hold it steady while your right hand moves through the quick eighth notes.",
+      lh:[
+        "E3+B3:4",
+        "C3+G3:4",
+        "D3+A3:4",
+        "A2+E3:4",
+        "E3+B3:4",
+        "C3+G3:4",
+        "D3+A3:4",
+        "A2+E3:4"
+      ]
+    } } },
 { id:"marriedlife", title:"Up - Married Life", group:"Movie themes", glyph:"&#9834;", bpm:100, yt:"https://www.youtube.com/watch?v=ifg91YJkw9k", meter:[3,4],
   tip:"Michael Giacchino's waltz from Up, simplified to one finger. It is in three - count 1, 2, 3 as you play.",
   casio:{ startKey:18, start:"Start on F5, above middle C (C4). All of this tune sits in the C5 to A5 range.",
@@ -437,7 +500,21 @@ const TUNES = [
 { id:"canthelpfalling", title:"Can't Help Falling In Love", group:"Movie themes", glyph:"&#9834;", bpm:64, yt:"https://www.youtube.com/watch?v=L5WmuUOQ3-8", meter:[4,4],
   tip:"Elvis's love song, simplified to one finger. Big slow notes - let each one ring before you move on.",
   casio:{ startKey:9, start:"Start around middle C (C4). The first note is D4.",
-    lines:[["D4:2 D5:2","Wise men say"],["D4:3 A4:0.5 B4:0.5","on-ly fools rush in"],["E5:2 B4:2","But I can't help"],["A4:3 R:0.5 D4:0.5","fall-ing in love with you"],["E4:2 F#4:2","Shall I stay"],["G4:2 A4:0.67 B4:0.67 C5:0.67","would it be a sin"],["B4:2 A4:2","If I can't help"],["D4:3 R:1","fall-ing in love with you"]] } },
+    lines:[["D4:2 D5:2","Wise men say"],["D4:3 A4:0.5 B4:0.5","on-ly fools rush in"],["E5:2 B4:2","But I can't help"],["A4:3 R:0.5 D4:0.5","fall-ing in love with you"],["E4:2 F#4:2","Shall I stay"],["G4:2 A4:0.67 B4:0.67 C5:0.67","would it be a sin"],["B4:2 A4:2","If I can't help"],["D4:3 R:1","fall-ing in love with you"]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on G2, thumb (1) on D3.\nRight hand (R, green): thumb (1) on D4, reaching up to D5.",
+      tip:"Slow, gentle half-note fifths in the left hand. Keep them steady through the triplet climb (A4-B4-C5) and end on a warm G2+B2+D3 chord.",
+      lh:[
+        "G2+D3:2 B2+F#3:2",
+        "G2+D3:2 D3+A3:2",
+        "E3+B3:2 G2+D3:2",
+        "D3+A3:3 R:1",
+        "C3+G3:2 D3+A3:2",
+        "G2+D3:2 A2+E3:2",
+        "G2+D3:2 D3+A3:2",
+        "G2+B2+D3:3 R:1"
+      ]
+    } } },
 { id:"rememberme", title:"Remember Me (Coco)", group:"Movie themes", glyph:"&#9834;", bpm:60, yt:"https://www.youtube.com/watch?v=m_usDsp2R4c", meter:[4,4],
   tip:"The lullaby from Coco, simplified to one finger. Slow and gentle - it is the goodbye song sung to Mama Coco.",
   casio:{ startKey:16, start:"Start above middle C. The first note is D5.",
@@ -513,7 +590,25 @@ const TUNES = [
 { id:"silentnight", title:"Silent Night", group:"Classics", glyph:"&#9834;", bpm:80, yt:"https://www.youtube.com/watch?v=_eSGBh7OVt8", meter:[3,4],
   tip:"Franz Gruber's carol, in a gentle 3/4. Keep it slow and soft, like a lullaby - let the dotted notes breathe.",
   casio:{ startKey:12, start:"Start around middle C (C4). The first note is G4, above it.\nIt is in 3/4 - three beats to a bar. The shape to feel: a dotted note, a short note, then one beat (1.5, 0.5, 1).",
-    lines:[["G4:1.5 E4:0.5 G4:1","Si-lent night,"],["E4:3","night."],["G4:1.5 E4:0.5 G4:1","ho-ly night,"],["E4:3","night!"],["D5:2 D5:1","All is"],["B4:3","calm,"],["C5:2 C5:1","all is"],["G4:3","bright."],["A4:2 A4:1","Round yon"],["C5:1.5 A4:0.5 F4:1","Vir-gin"],["G4:1.5 E4:0.5 G4:1","Moth-er and child,"],["E4:3","child."]] } },
+    lines:[["G4:1.5 E4:0.5 G4:1","Si-lent night,"],["E4:3","night."],["G4:1.5 E4:0.5 G4:1","ho-ly night,"],["E4:3","night!"],["D5:2 D5:1","All is"],["B4:3","calm,"],["C5:2 C5:1","all is"],["G4:3","bright."],["A4:2 A4:1","Round yon"],["C5:1.5 A4:0.5 F4:1","Vir-gin"],["G4:1.5 E4:0.5 G4:1","Moth-er and child,"],["E4:3","child."]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on C3, thumb (1) on G3 — one octave below middle C.\nRight hand (R, green): finger 4 on G4, finger 2 on E4.",
+      tip:"One calm 3-beat chord per bar: C3+G3 for C, G2+F3 for G7, and F3+A3 for F. Let each chord ring through the dotted melody above it.",
+      lh:[
+        "C3+G3:3",
+        "C3+G3:3",
+        "C3+G3:3",
+        "C3+G3:3",
+        "G2+F3:3",
+        "G2+F3:3",
+        "C3+G3:3",
+        "C3+G3:3",
+        "F3+A3:3",
+        "F3+A3:3",
+        "C3+G3:3",
+        "C3+E3+G3:3"
+      ]
+    } } },
 { id:"miraculous", title:"Miraculous Ladybug Theme", group:"Games & TV themes", glyph:"&#9834;", bpm:100, yt:"https://www.youtube.com/watch?v=0LwmVkCALQQ", meter:[4,4],
   tip:"The Miraculous Ladybug theme. Punchy and bright: mind the rests at the start of each bar - the riff kicks in after a beat and a half of silence.",
   casio:{ startKey:8, start:"Start on middle C (C4). Most bars begin with a rest (one beat, then a half beat) before the riff comes in.\nThe riff sits low: C4 and A3, under the staff.",
@@ -537,7 +632,22 @@ const TUNES = [
 { id:"faded", title:"Faded (Alan Walker)", group:"Pop favorites", glyph:"&#9834;", bpm:74, yt:"https://www.youtube.com/watch?v=rHx49J7QUiY", meter:[4,4],
   tip:"Alan Walker's Faded, in A minor at a steady 74. Four square bars of quarter notes open it; bars 5, 7 and 9 open with a rest before the singing comes in.",
   casio:{ startKey:13, start:"Start around middle C (C4). The first note is A4.\nThe high note is A5, an octave above it.",
-    lines:[["A4:1 A4:1 A4:1 C5:1","You were the shadow"],["A5:1 A5:1 A5:1 E5:1","to my light, did you"],["E5:1 E5:1 E5:1 E5:1","feel us"],["B4:1 B4:1 B4:1 A4:1","A-no-ther start"],["R:0.5 C5:0.5 C5:0.5 A4:0.5 C5:0.5 A4:0.5 C5:0.5 E5:0.5","You fade a-way"],["E5:1 C5:0.5 C5:0.5 A4:0.5 E5:1.5","A-fraid our aim is"],["R:2.5 C5:0.5 C5:0.5 C5:0.5","out of sight"],["B4:0.5 A4:1 B4:0.5 B4:0.5 A4:0.5 C5:1","Wan-na see us"],["R:0.5 C5:0.5 C5:0.5 A4:0.5 C5:0.5 A4:0.5 C5:0.5 E5:0.5","a-live"]] } },
+    lines:[["A4:1 A4:1 A4:1 C5:1","You were the shadow"],["A5:1 A5:1 A5:1 E5:1","to my light, did you"],["E5:1 E5:1 E5:1 E5:1","feel us"],["B4:1 B4:1 B4:1 A4:1","A-no-ther start"],["R:0.5 C5:0.5 C5:0.5 A4:0.5 C5:0.5 A4:0.5 C5:0.5 E5:0.5","You fade a-way"],["E5:1 C5:0.5 C5:0.5 A4:0.5 E5:1.5","A-fraid our aim is"],["R:2.5 C5:0.5 C5:0.5 C5:0.5","out of sight"],["B4:0.5 A4:1 B4:0.5 B4:0.5 A4:0.5 C5:1","Wan-na see us"],["R:0.5 C5:0.5 C5:0.5 A4:0.5 C5:0.5 A4:0.5 C5:0.5 E5:0.5","a-live"]],
+    twoHands:{
+      start:"Left hand (L, blue): pinky (5) on A2, thumb (1) on E3 — cycling Am, F, C, G fifths.\nRight hand (R, green): thumb (1) on A4, reaching up to A5.",
+      tip:"Hold each left-hand fifth for 4 full beats (Am - F - C - G). In bars 5, 7, and 9, your left hand lands on beat 1 while your right hand rests briefly before entering.",
+      lh:[
+        "A2+E3:4",
+        "F2+C3:4",
+        "C3+G3:4",
+        "G2+D3:4",
+        "A2+E3:4",
+        "F2+C3:4",
+        "C3+G3:4",
+        "G2+D3:4",
+        "A2+E3:4"
+      ]
+    } } },
 { id:"beautifulinwhite", title:"Beautiful In White (Westlife)", group:"Pop favorites", glyph:"&#9834;", bpm:100, yt:"https://www.youtube.com/watch?v=ttcm8zTppLA", meter:[4,4],
   tip:"The Westlife wedding ballad (built on Pachelbel's Canon), in C major at 100. Eight long whole-note bars open it - one note per bar, let them ring - then the singing strain starts at bar 9. Bars 11, 13, 15, 19, 21 and 23 begin with a 1-beat rest.",
   casio:{ startKey:17, start:"Start on E5, above middle C (C4).\nThe tune tops out on that E5 and sinks to D4 and E4 in a few bars.",
