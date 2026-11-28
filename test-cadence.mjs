@@ -318,13 +318,31 @@ const mh = gigTokens("myheartwillgoon");
 assert.deepEqual(mh.slice(0, 4).map(n => n.pitch.replace(/[+-]/g, "")), ["F","F","F","F"]);
 assert.deepEqual(mh.slice(0, 4).map(n => n.beats), [1.5,0.5,1,1]);
 
-// Pink Panther: Betacustic beginner sheet (Musicnotes MN0221798,
-// E minor, 4/4): the riff is a grace-note pickup (encoded 0.5) into a
-// dotted-long E and a short F#; statement 3 turns the grace note to
-// Eb and the short note to D natural, landing on a held C.
+// Pink Panther: Musicnotes MN0221798 (E minor, 4/4, bars 0-11 verified
+// from video reading; page 2 / bars 12+ remain unread so chip stays):
+// pickup + figure bars open with R:0.75 + 0.25 sixteenth pickup, tied
+// whole-into-half sustains, bar 7/11 R:0.75 rest splits, and bar 9
+// eighth-note triplets tied into bar 10's dotted half.
 const pp = gigTokens("pinkpanther");
-assert.deepEqual(pp.slice(0, 3).map(n => n.pitch.replace(/[+-]/g, "")), ["D#","E","F#"]);
-assert.deepEqual(pp.slice(0, 3).map(n => n.beats), [0.5,2.5,0.5]);
+const ppAll = gigAllTokens("pinkpanther");
+const ppCasio = casioTokens("pinkpanther");
+const ppCasioAll = casioAllTokens("pinkpanther");
+assert.deepEqual(ppAll[0], { kind: "rest", pitch: "R", beats: 0.75, key: null, tied: false });
+assert.deepEqual(pp.slice(0, 3).map(n => n.pitch.replace(/[+-]/g, "")), ["C#","D","D#"]);
+assert.deepEqual(pp.slice(0, 3).map(n => n.beats), [0.25,0.75,0.25]);
+assert.equal(pp[3].pitch.replace(/[+-]/g, ""), "E");
+assert.equal(pp[3].beats, 4);
+assert.equal(pp[3].tied, true);
+assert.equal(pp[4].beats, 2);
+// Bar 7 and Bar 11 (E4:1 R:0.75 F#4:0.5 G4:0.5 R:0.75 D#4:0.5) each carry two R:0.75 rests (9 total)
+const ppRests = ppCasioAll.filter(t => t.kind === "rest").map(t => t.beats);
+assert.deepEqual(ppRests, [0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75]);
+// Bar 9 triplets (Bb4:2 + six 1/3-beat triplets, E4 tied into Bar 10 E4:3)
+assert.deepEqual(ppCasio.slice(30, 38).map(n => n.pitch), ["Bb4","Bb4","A4","G4","F#4","D4","E4","E4"]);
+assert.equal(ppCasio[30].beats, 2);
+for (let i = 31; i <= 36; i++) assert.equal(ppCasio[i].beats, 0.33);
+assert.equal(ppCasio[36].tied, true);
+assert.equal(ppCasio[37].beats, 3);
 
 // Baby Shark: Betacustic beginner sheet (Musicnotes MN0225122,
 // G major, 4/4, q=80): half-note name line, then the doo run in
@@ -1082,9 +1100,9 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES (61 complete tunes pass strict bar-sum checks)
+// Bar-sum validation across TUNES (62 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
-  "itsy","leanonme","pinkpanther","showyourself","someonelikeyou","whatawonderfulworld"
+  "itsy","leanonme","showyourself","someonelikeyou","whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1136,15 +1154,15 @@ for (const t of api.TUNES) {
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
 }
-assert.equal(barValidatedCount, 61, "expected 61 bar-sum validated tunes");
+assert.equal(barValidatedCount, 62, "expected 62 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
-for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions","someonelikeyou","whatawonderfulworld"]) {
+for (const tid of ["pinkpanther","bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions","someonelikeyou","whatawonderfulworld"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
 }
-for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfound","shallow","godzilla"]) {
+for (const tid of ["pinkpanther","oceans","rewritethestars","toxic","tryeverything","allisfound","shallow","godzilla"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.tiedContinuation), `${tid} must contain merged cross-bar ties`);
