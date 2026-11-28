@@ -829,7 +829,9 @@ assert.deepEqual(goldenhourN.slice(72, 78).map(n => n.pitch.replace(/[+-]/g, "")
 // 3.5 + 3 across the line break, total preserved. Rests dropped.
 const wonderfulN = gigTokens("whatawonderfulworld");
 assert.deepEqual(wonderfulN.slice(0, 5).map(n => n.pitch.replace(/[+-]/g, "")), ["C", "D", "F", "F", "C"]);
-assert.deepEqual(wonderfulN.slice(0, 5).map(n => n.beats), [1, 0.5, 1, 0.5, 3]);
+assert.deepEqual(wonderfulN.slice(0, 5).map(n => n.beats), [1, 0.5, 1, 0.5, 1.5]);
+const wonderfulAll = gigAllTokens("whatawonderfulworld");
+assert.deepEqual(wonderfulAll[5], { kind: "rest", pitch: "R", beats: 3, key: null, tied: false });
 assert.deepEqual(wonderfulN.slice(5, 9).map(n => n.beats), [0.5, 1, 0.5, 3]);
 assert.equal(wonderfulN[29].beats, 3.5, "Wonderful World bar 6-7 tied A must total 3.5 + 3");
 
@@ -1137,7 +1139,7 @@ for (const t of api.TUNES) {
 assert.equal(barValidatedCount, 61, "expected 61 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
-for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions"]) {
+for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions","someonelikeyou","whatawonderfulworld"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
