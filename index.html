@@ -711,7 +711,73 @@ function buildSequence(v, inst){
   });
   return seq;
 }
+const VOICE_PRESETS = {
+  casio: {
+    harmonics: [0, 1.00, 0.42, 0.24, 0.14, 0.09, 0.055, 0.032, 0.018, 0.010, 0.006],
+    bassBoost: 0.65, detuneCents: 3.5, detuneStretch: 0.4,
+    bellRatio: 3.01, bellGain: 0.085, bellDecay: 0.075,
+    hammerFreq: 950, hammerQ: 1.4, hammerGain: 0.16, hammerDecay: 0.024,
+    filtPeakMult: 6.5, filtPeakFloor: 1800, filtSustMult: 2.3, filtSustFloor: 720, filtSweepSec: 0.125,
+    attackSec: 0.004, dropTimeSec: 0.095, dropRatio: 0.58,
+    tauC4: 2.40, sustFloor: 0.11, relMax: 0.085, legatoRel: 0.050, revSend: 0.14
+  },
+  gig: {
+    harmonics: [0, 1.00, 0.52, 0.34, 0.12, 0.20, 0.060, 0.045, 0.015, 0.010, 0.000],
+    bassBoost: 0.35, detuneCents: 1.8, detuneStretch: 0,
+    bellRatio: 4.02, bellGain: 0.14, bellDecay: 0.090,
+    hammerFreq: 2100, hammerQ: 2.0, hammerGain: 0.20, hammerDecay: 0.016,
+    filtPeakMult: 7.5, filtPeakFloor: 2200, filtSustMult: 2.8, filtSustFloor: 900, filtSweepSec: 0.095,
+    attackSec: 0.003, dropTimeSec: 0.070, dropRatio: 0.52,
+    tauC4: 1.35, sustFloor: 0.08, relMax: 0.065, legatoRel: 0.040, revSend: 0.09
+  }
+};
 let speakerEl = null, speakerDest = null;
+let songBus = null, masterEqNode = null, revSendNode = null, hammerBuf = null;
+let waveCache = new Map(), scheduledVoices = [], hasNativePlaybackSession = false;
+
+function buildHammerBuffer(ctx){
+  const sr = ctx.sampleRate || 48000, len = Math.floor(sr * 0.04);
+  const buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+  let lp = 0;
+  for(let i = 0; i < len; i++){
+    // Deterministic PRNG noise shaped with raised-attack exponential envelope
+    const white = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    const n = (white - Math.floor(white)) * 2 - 1;
+    lp = lp * 0.55 + n * 0.45;
+    const t = i / sr;
+    d[i] = lp * Math.min(1, t / 0.002) * Math.exp(-t / 0.010);
+  }
+  return buf;
+}
+function getPeriodicWave(ctx, inst, midi){
+  if(!ctx.createPeriodicWave) return null;
+  const band = Math.round(midi / 3) * 3;
+  const key = inst + ":" + band;
+  if(waveCache.has(key)) return waveCache.get(key);
+  const p = VOICE_PRESETS[inst] || VOICE_PRESETS.casio;
+  const freq = 440 * Math.pow(2, (band - 69) / 12);
+  const maxH = Math.min(p.harmonics.length - 1, Math.floor(18000 / freq));
+  const bassBoost = Math.max(0, Math.min(1, (64 - band) / 16));
+  const highTame = Math.max(0, Math.min(1, (band - 67) / 17));
+  const N = p.harmonics.length;
+  const real = new Float32Array(N), imag = new Float32Array(N);
+  for(let k = 1; k <= maxH; k++){
+    let a = p.harmonics[k];
+    if(k >= 2 && k <= 6) a *= (1 + bassBoost * p.bassBoost);
+    if(k === 1 && bassBoost > 0) a *= (1 - 0.22 * bassBoost);
+    if(k >= 3) a *= (1 - 0.55 * highTame);
+    // Schroeder phase dispersion lowers waveform peak crest factor by ~3 dB
+    const phi = (Math.PI * k * (k - 1)) / maxH;
+    real[k] = a * Math.cos(phi);
+    imag[k] = a * Math.sin(phi);
+  }
+  const pw = ctx.createPeriodicWave(real, imag);
+  waveCache.set(key, pw);
+  return pw;
+}
+function tryStopNode(node, t){
+  if(node){ try{ node.stop(t); }catch(e){} }
+}
 function routeToSpeaker(){
   // Send WebAudio out through a media element: iOS then uses the media
   // (speaker) channel, which ignores the silent switch, instead of the
@@ -733,8 +799,36 @@ function ensureAudio(){
   if(!audioCtx){
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return false;
-    audioCtx = new AC(); masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5;
-    routeToSpeaker();
+    hasNativePlaybackSession = false;
+    if(typeof navigator !== "undefined" && "audioSession" in navigator && navigator.audioSession){
+      try{ navigator.audioSession.type = "playback"; hasNativePlaybackSession = true; }catch(e){}
+    }
+    try{ audioCtx = new AC({ latencyHint: "interactive" }); }
+    catch(e){ audioCtx = new AC(); }
+    waveCache.clear();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.65;
+    songBus = audioCtx.createGain();
+    songBus.gain.value = 1.0;
+    if(audioCtx.createBuffer) hammerBuf = buildHammerBuffer(audioCtx);
+    if(audioCtx.createBiquadFilter && audioCtx.createDynamicsCompressor){
+      const hpf = audioCtx.createBiquadFilter();
+      hpf.type = "highpass"; hpf.frequency.value = 115; hpf.Q.value = 0.71;
+      const eq = audioCtx.createBiquadFilter();
+      eq.type = "peaking"; eq.frequency.value = 2500; eq.Q.value = 1.1; eq.gain.value = -3.5;
+      masterEqNode = eq;
+      const comp = audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -6; comp.knee.value = 8; comp.ratio.value = 6;
+      comp.attack.value = 0.003; comp.release.value = 0.12;
+      songBus.connect(hpf); hpf.connect(eq); eq.connect(comp); comp.connect(masterGain);
+    } else {
+      songBus.connect(masterGain);
+    }
+    if(hasNativePlaybackSession) masterGain.connect(audioCtx.destination);
+    else routeToSpeaker();
+  }
+  if(!hasNativePlaybackSession && speakerEl && speakerEl.paused){
+    try{ const p = speakerEl.play(); if(p && p.catch) p.catch(function(){}); }catch(e){}
   }
   if(audioCtx.state==="suspended") audioCtx.resume();
   return true;
@@ -743,42 +837,141 @@ let activeStepVoice = null;
 function dampStepVoice(){
   if(!activeStepVoice || !audioCtx) return;
   try{
-    const { g, osc, osc2 } = activeStepVoice;
+    const { g, osc, osc2, oscBell, hammerSrc } = activeStepVoice;
     const now = audioCtx.currentTime;
     if(g.gain.cancelScheduledValues) g.gain.cancelScheduledValues(now);
     g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.4), now);
     g.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
-    osc.stop(now + 0.025); osc2.stop(now + 0.025);
+    const stopAt = now + 0.025;
+    tryStopNode(osc, stopAt);
+    tryStopNode(osc2, stopAt);
+    tryStopNode(oscBell, stopAt);
+    tryStopNode(hammerSrc, stopAt);
   }catch(e){}
   activeStepVoice = null;
 }
-function playToneAt(midi, when, slotSec){
+function playToneAt(midi, when, slotSec, opts){
+  const o = opts || {};
+  const inst = o.inst || piano || "gig";
+  const vel = o.vel !== undefined ? o.vel : 0.82;
+  const legato = !!o.legato;
+  const detuneBias = o.detuneBias || 0;
+  const p = VOICE_PRESETS[inst] || VOICE_PRESETS.casio;
   const freq = 440 * Math.pow(2, (midi-69)/12);
-  const osc = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator(), g = audioCtx.createGain();
-  osc.type = "triangle"; osc.frequency.value = freq;
-  osc2.type = "sine"; osc2.frequency.value = freq*2;
-  const g2 = audioCtx.createGain(); g2.gain.value = 0.25;
-  const dur = Math.max(0.04, slotSec);
-  const attack = 0.005;
-  const gap = Math.min(0.045, dur * 0.12);
-  const gateEnd = when + Math.max(0.035, dur - gap);
-  const release = Math.min(0.035, (gateEnd - when) * 0.25);
-  const releaseStart = Math.max(when + attack + 0.005, gateEnd - release);
-  g.gain.setValueAtTime(0.0001, when);
-  g.gain.linearRampToValueAtTime(0.9, when + attack);
-  if(releaseStart > when + 0.085){
-    g.gain.exponentialRampToValueAtTime(0.65, when + 0.085);
-    const holdSec = releaseStart - (when + 0.085);
-    const sustainEnd = Math.max(0.25, 0.65 * Math.exp(-holdSec / 2.6));
-    g.gain.exponentialRampToValueAtTime(sustainEnd, releaseStart);
+
+  // Create primary amp envelope node first (keeps mock-ctx index predictable)
+  const g = audioCtx.createGain();
+  const bassBoost = Math.max(0, Math.min(1, (64 - midi) / 16));
+  const highTame = Math.max(0, Math.min(1, (midi - 67) / 17));
+  const peakGain = (0.95 - 0.24 * highTame + 0.08 * bassBoost) * Math.pow(vel, 1.15);
+
+  const dur = Math.max(0.045, slotSec);
+  const gap = legato ? 0 : Math.min(0.026, dur * 0.10);
+  const noteOff = when + Math.max(0.032, dur - gap);
+  let relDur, relStart, gateEnd;
+  if(legato){
+    relDur = Math.min(p.legatoRel, dur * 0.35);
+    relStart = when + dur;
+    gateEnd = relStart + relDur;
   } else {
-    g.gain.exponentialRampToValueAtTime(0.7, releaseStart);
+    gateEnd = noteOff;
+    relDur = Math.min(p.relMax, Math.max(0.015, (gateEnd - when) * 0.28));
+    relStart = Math.max(when + p.attackSec + 0.006, gateEnd - relDur);
+  }
+  const tau = p.tauC4 * Math.pow(2, (60 - midi) / 28);
+
+  // 2-stage piano amplitude envelope: fast strike -> soundboard drop -> string decay -> damper release
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(peakGain, when + p.attackSec);
+  const dropEnd = when + p.dropTimeSec;
+  if(relStart > dropEnd){
+    const afterDrop = peakGain * p.dropRatio;
+    g.gain.exponentialRampToValueAtTime(afterDrop, dropEnd);
+    const holdSec = relStart - dropEnd;
+    const sustEnd = Math.max(peakGain * p.sustFloor, afterDrop * Math.exp(-holdSec / tau));
+    g.gain.exponentialRampToValueAtTime(sustEnd, relStart);
+  } else {
+    g.gain.exponentialRampToValueAtTime(peakGain * 0.72, relStart);
   }
   g.gain.exponentialRampToValueAtTime(0.0001, gateEnd);
-  osc.connect(g); osc2.connect(g2); g2.connect(g); g.connect(masterGain);
+
+  const osc = audioCtx.createOscillator(), osc2 = audioCtx.createOscillator();
+  const pw = getPeriodicWave(audioCtx, inst, midi);
+  if(pw && osc.setPeriodicWave){
+    osc.setPeriodicWave(pw); osc2.setPeriodicWave(pw);
+  } else {
+    osc.type = "triangle"; osc2.type = "sawtooth";
+  }
+  osc.frequency.value = freq;
+  osc2.frequency.value = freq;
+  if(osc.detune){
+    osc.detune.value = -p.detuneCents + detuneBias;
+    osc2.detune.value = +p.detuneCents + (p.detuneStretch || 0) + detuneBias;
+  } else {
+    osc2.frequency.value = freq * Math.pow(2, p.detuneCents / 1200);
+  }
+
+  const mixGain = audioCtx.createGain();
+  mixGain.gain.value = 0.52;
+
+  let oscBell = null, hammerSrc = null;
+  const stopTime = gateEnd + 0.02;
+
+  if(audioCtx.createBiquadFilter){
+    const lpf = audioCtx.createBiquadFilter();
+    lpf.type = "lowpass";
+    lpf.Q.value = 0.85;
+    const cPeak = Math.min(11000, Math.max(p.filtPeakFloor, freq * p.filtPeakMult) * (0.62 + 0.58 * vel));
+    const cSust = Math.min(6400, Math.max(p.filtSustFloor, freq * p.filtSustMult) * (0.75 + 0.35 * vel));
+    const sweepEnd = Math.min(gateEnd, when + p.filtSweepSec);
+    lpf.frequency.setValueAtTime(cPeak, when);
+    lpf.frequency.exponentialRampToValueAtTime(cSust, sweepEnd);
+    if(gateEnd > sweepEnd + 0.01){
+      lpf.frequency.exponentialRampToValueAtTime(Math.max(420, cSust * 0.65), gateEnd);
+    }
+
+    osc.connect(mixGain); osc2.connect(mixGain);
+    mixGain.connect(lpf); lpf.connect(g);
+
+    // Stretched bell/tine strike partial (below 14 kHz Nyquist headroom)
+    if(freq * p.bellRatio < 14000){
+      oscBell = audioCtx.createOscillator();
+      oscBell.type = "sine";
+      oscBell.frequency.value = freq * p.bellRatio;
+      const bg = audioCtx.createGain();
+      bg.gain.setValueAtTime(Math.max(0.0001, p.bellGain * vel), when);
+      bg.gain.exponentialRampToValueAtTime(0.0001, when + p.bellDecay);
+      oscBell.connect(bg); bg.connect(g);
+      oscBell.start(when); oscBell.stop(Math.min(stopTime, when + p.bellDecay + 0.015));
+    }
+
+    // Felt-hammer / wooden-key transient burst
+    if(hammerBuf && audioCtx.createBufferSource){
+      hammerSrc = audioCtx.createBufferSource();
+      hammerSrc.buffer = hammerBuf;
+      const bpf = audioCtx.createBiquadFilter();
+      bpf.type = "bandpass";
+      bpf.frequency.value = Math.min(4200, p.hammerFreq * Math.pow(2, (midi - 60) / 36));
+      bpf.Q.value = p.hammerQ;
+      const hg = audioCtx.createGain();
+      hg.gain.setValueAtTime(Math.max(0.0001, p.hammerGain * Math.pow(vel, 1.3)), when);
+      hg.gain.exponentialRampToValueAtTime(0.0001, when + p.hammerDecay);
+      hammerSrc.connect(bpf); bpf.connect(hg); hg.connect(g);
+      hammerSrc.start(when); hammerSrc.stop(when + 0.04);
+    }
+  } else {
+    osc.connect(mixGain); osc2.connect(mixGain); mixGain.connect(g);
+  }
+
+  g.connect(songBus || masterGain);
   osc.start(when); osc2.start(when);
-  osc.stop(gateEnd + 0.02); osc2.stop(gateEnd + 0.02);
-  return { g, osc, osc2 };
+  osc.stop(stopTime); osc2.stop(stopTime);
+
+  const nowT = audioCtx.currentTime;
+  if(scheduledVoices.length > 32) scheduledVoices = scheduledVoices.filter(v => v.stopTime > nowT);
+  const voice = { g, osc, osc2, oscBell, hammerSrc, stopTime };
+  scheduledVoices.push(voice);
+  return voice;
 }
 function setTempo(bpm){
   currentBpm = bpm || 100;
@@ -795,7 +988,23 @@ function tempoBpm(){ return currentBpm; }
 function stopPlayback(){
   playbackTimers.forEach(clearTimeout); playbackTimers = [];
   dampStepVoice();
-  if(masterGain && audioCtx){ try{ masterGain.disconnect(); }catch(e){} masterGain = audioCtx.createGain(); masterGain.gain.value = 0.5; routeToSpeaker(); }
+  if(audioCtx && scheduledVoices.length){
+    const now = audioCtx.currentTime;
+    if(songBus && songBus.gain.cancelScheduledValues){
+      songBus.gain.cancelScheduledValues(now);
+      songBus.gain.setValueAtTime(Math.max(0.0001, songBus.gain.value || 1), now);
+      songBus.gain.exponentialRampToValueAtTime(0.0001, now + 0.014);
+      songBus.gain.setValueAtTime(1.0, now + 0.017);
+    }
+    const stopAt = now + 0.015;
+    scheduledVoices.forEach(v=>{
+      tryStopNode(v.osc, stopAt);
+      tryStopNode(v.osc2, stopAt);
+      tryStopNode(v.oscBell, stopAt);
+      tryStopNode(v.hammerSrc, stopAt);
+    });
+    scheduledVoices = [];
+  }
   playing = false;
   const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
 }
@@ -1113,12 +1322,12 @@ function stepNote(){
   const n = pseq[noteIdx];
   if(follow && n && ensureAudio()){
     dampStepVoice();
-    activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()));
+    activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false });
   }
 }
 $("#playBtn").addEventListener("click", playTune);
 $("#tempoRange").addEventListener("input", e=>{ setTempo(parseInt(e.target.value,10) || 100); if(playing) stopPlayback(); });
-$("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()){ dampStepVoice(); activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm())); } });
+$("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()){ dampStepVoice(); activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false }); } });
 $("#nextNoteBtn").addEventListener("click", stepNote);
 $("#resetBtn").addEventListener("click", ()=>{ follow = false; noteIdx = -1;
   clearNoteHighlights(); updateFollowUI(); });
@@ -1133,6 +1342,7 @@ function closeFocus(){
 $("#backBtn").addEventListener("click", closeFocus);
 function stepTune(d){
   if(!currentId) return;
+  stopPlayback();
   const i = TUNES.findIndex(x=>x.id===currentId);
   const n = (i + d + TUNES.length) % TUNES.length;
   currentId = TUNES[n].id; follow = false; noteIdx = -1;
