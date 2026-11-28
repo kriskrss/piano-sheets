@@ -97,7 +97,7 @@ function makeEl(tag = "div") {
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(scriptMatch, "missing <script> block");
 const domMap = new Map();
-for (const id of ["home","focus","fTitle","fGroup","fName","fStart","fKb","kbLeft","kbMid","kbRight","fNotes","fTip","fYt","fProgress","tempoRange","tempoVal","playBtn","followBtn","nextNoteBtn","resetBtn","wakeBtn","backBtn","prevTune","nextTune","searchInput"]) {
+for (const id of ["home","focus","fTitle","fGroup","fName","fFlag","fStart","fKb","kbLeft","kbMid","kbRight","fNotes","fTip","fYt","fProgress","tempoRange","tempoVal","playBtn","followBtn","nextNoteBtn","resetBtn","wakeBtn","backBtn","prevTune","nextTune","searchInput"]) {
   domMap.set("#" + id, makeEl(id === "tempoRange" ? "input" : "div"));
 }
 domMap.get("#tempoRange").min = "36";
@@ -136,7 +136,7 @@ const sandbox = {
   }
 };
 sandbox.window = sandbox;
-vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, generateGigVariant, playToneAt, ensureAudio, setTempo, tempoBpm, setAudioCtx(c, m){ audioCtx = c; masterGain = m; } };", sandbox);
+vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, VOICE_PRESETS, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, generateGigVariant, playToneAt, ensureAudio, stopPlayback, computeNoteExpressiveness, setPiano, setTempo, tempoBpm, getScheduledVoices(){ return scheduledVoices; }, resetAudio(){ audioCtx = null; masterGain = null; songBus = null; masterEqNode = null; revSendNode = null; hammerBuf = null; speakerEl = null; speakerDest = null; hasNativePlaybackSession = false; waveCache.clear(); scheduledVoices = []; }, setAudioCtx(c, m, opts){ audioCtx = c; masterGain = m; songBus = null; masterEqNode = null; revSendNode = null; waveCache.clear(); scheduledVoices = []; hammerBuf = (c && c.createBuffer) ? buildHammerBuffer(c) : null; if(opts && opts.inst) piano = opts.inst; } };", sandbox);
 const api = sandbox.__api;
 
 function gigAllTokens(id) {
@@ -1150,28 +1150,40 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
   assert.ok(seq.some(e => e.tiedContinuation), `${tid} must contain merged cross-bar ties`);
 }
 
-// ============ Envelope tests (mock AudioContext) ============
+// ============ Envelope & voice tests (mock AudioContext, Section 4.5) ============
 {
-  const makeMockCtx = () => {
+  const makeMockCtx = (opts = {}) => {
+    const minimal = !!opts.minimal;
     const gains = [];
     const oscs = [];
+    const filters = [];
+    const compressors = [];
+    const convolvers = [];
+    const bufferSources = [];
+    const periodicWaves = [];
+    const makeParam = (initVal) => {
+      const events = [];
+      return {
+        value: initVal,
+        events,
+        setValueAtTime(v, t) { events.push({ op: "set", v, t }); },
+        linearRampToValueAtTime(v, t) { events.push({ op: "lin", v, t }); },
+        exponentialRampToValueAtTime(v, t) { events.push({ op: "exp", v, t }); },
+        cancelScheduledValues() {}
+      };
+    };
     const ctx = {
+      sampleRate: 48000,
       currentTime: 0,
       state: "running",
-      destination: {},
+      destination: { _dest: true },
       createGain() {
-        const events = [];
+        const gParam = makeParam(1);
         const node = {
-          events,
-          gain: {
-            value: 1,
-            events,
-            setValueAtTime(v, t) { events.push({ op: "set", v, t }); },
-            linearRampToValueAtTime(v, t) { events.push({ op: "lin", v, t }); },
-            exponentialRampToValueAtTime(v, t) { events.push({ op: "exp", v, t }); },
-            cancelScheduledValues() {}
-          },
-          connect() {}
+          events: gParam.events,
+          gain: gParam,
+          connections: [],
+          connect(dest) { node.connections.push(dest); }
         };
         gains.push(node);
         return node;
@@ -1180,9 +1192,13 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
         const osc = {
           type: "sine",
           frequency: { value: 440 },
+          detune: { value: 0 },
+          periodicWave: null,
           started: null,
           stopped: null,
-          connect() {},
+          connections: [],
+          setPeriodicWave(pw) { osc.periodicWave = pw; },
+          connect(dest) { osc.connections.push(dest); },
           start(t) { osc.started = t; },
           stop(t) { osc.stopped = t; }
         };
@@ -1190,7 +1206,73 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
         return osc;
       }
     };
-    return { ctx, gains, oscs };
+    if (!minimal) {
+      ctx.createBiquadFilter = () => {
+        const freq = makeParam(350);
+        const f = {
+          type: "lowpass",
+          frequency: freq,
+          freqEvents: freq.events,
+          Q: { value: 1 },
+          gain: { value: 0 },
+          connections: [],
+          connect(dest) { f.connections.push(dest); }
+        };
+        filters.push(f);
+        return f;
+      };
+      ctx.createDynamicsCompressor = () => {
+        const c = {
+          threshold: { value: -24 },
+          knee: { value: 30 },
+          ratio: { value: 12 },
+          attack: { value: 0.003 },
+          release: { value: 0.25 },
+          connections: [],
+          connect(dest) { c.connections.push(dest); }
+        };
+        compressors.push(c);
+        return c;
+      };
+      ctx.createConvolver = () => {
+        const cv = {
+          buffer: null,
+          connections: [],
+          connect(dest) { cv.connections.push(dest); }
+        };
+        convolvers.push(cv);
+        return cv;
+      };
+      ctx.createBuffer = (channels, length, sampleRate) => {
+        const data = Array.from({ length: channels }, () => new Float32Array(length));
+        return {
+          numberOfChannels: channels,
+          length,
+          sampleRate,
+          getChannelData(ch) { return data[ch]; }
+        };
+      };
+      ctx.createBufferSource = () => {
+        const bs = {
+          buffer: null,
+          started: null,
+          stopped: null,
+          connections: [],
+          connect(dest) { bs.connections.push(dest); },
+          start(t) { bs.started = t; },
+          stop(t) { bs.stopped = t; }
+        };
+        bufferSources.push(bs);
+        return bs;
+      };
+      ctx.createPeriodicWave = (real, imag) => {
+        const pw = { real: Array.from(real), imag: Array.from(imag) };
+        periodicWaves.push(pw);
+        return pw;
+      };
+      ctx.createMediaStreamDestination = () => ({ stream: {} });
+    }
+    return { ctx, gains, oscs, filters, compressors, convolvers, bufferSources, periodicWaves };
   };
 
   function evalGainAt(events, t) {
@@ -1208,27 +1290,126 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
     return prev.v;
   }
 
-  // Test 1: 4-beat whole note at 60 bpm (slotSec = 4.0) stays audible at 50% and 90%
+  // Test 1: Casio 4-beat whole note at 60 bpm (slotSec = 4.0) decays naturally yet stays audible at 50% and 90%
   const m1 = makeMockCtx();
-  api.setAudioCtx(m1.ctx, m1.ctx.createGain());
-  api.playToneAt(69, 0, 4.0);
-  const env1 = m1.gains[1].events; // [0]=master, [1]=g, [2]=g2
-  assert.ok(evalGainAt(env1, 0.005) >= 0.89, "attack must reach peak by 5ms");
-  assert.ok(evalGainAt(env1, 2.0) >= 0.30, `50% hold gain too low: ${evalGainAt(env1, 2.0)}`);
-  assert.ok(evalGainAt(env1, 3.6) >= 0.25, `90% hold gain too low: ${evalGainAt(env1, 3.6)}`);
+  api.setAudioCtx(m1.ctx, m1.ctx.createGain(), { inst: "casio" });
+  api.playToneAt(69, 0, 4.0, { inst: "casio" });
+  const env1 = m1.gains[1].events; // [0]=master, [1]=g, [2]=mixGain, [3]=bg, [4]=hg
+  assert.ok(evalGainAt(env1, 0.004) >= 0.70, `attack must reach peak by 4ms, got ${evalGainAt(env1, 0.004)}`);
+  assert.ok(evalGainAt(env1, 2.0) >= 0.16, `50% hold gain too low: ${evalGainAt(env1, 2.0)}`);
+  assert.ok(evalGainAt(env1, 3.6) >= 0.09, `90% hold gain too low: ${evalGainAt(env1, 3.6)}`);
+  assert.ok(evalGainAt(env1, 2.0) < evalGainAt(env1, 0.004) && evalGainAt(env1, 3.6) < evalGainAt(env1, 2.0), "whole note must decay rather than sit on a flat shelf");
   const gateEnd1 = env1[env1.length - 1].t;
-  assert.ok(gateEnd1 > 3.9 && gateEnd1 <= 4.0, `gateEnd1 expected ~3.955, got ${gateEnd1}`);
+  assert.ok(gateEnd1 > 3.9 && gateEnd1 <= 4.0, `gateEnd1 expected ~3.974, got ${gateEnd1}`);
   assert.equal(env1[env1.length - 1].v, 0.0001);
+  // Voice anatomy checks: PeriodicWave, detuned unison, LPF downward sweep, bell partial, hammer burst
+  assert.ok(m1.oscs.length === 3, `expected 3 oscillators (2 unison + 1 bell), got ${m1.oscs.length}`);
+  assert.ok(m1.oscs[0].periodicWave && m1.oscs[1].periodicWave, "unison oscs must use PeriodicWave");
+  assert.equal(m1.oscs[0].detune.value, -3.5);
+  assert.equal(m1.oscs[1].detune.value, 3.9);
+  assert.ok(Math.abs(m1.oscs[2].frequency.value - 440 * 3.01) < 1e-6, "casio bell partial must be 3.01x");
+  assert.ok(m1.filters[0].type === "lowpass" && m1.filters[0].freqEvents[0].v > m1.filters[0].freqEvents[1].v, "LPF must sweep bright->warm");
+  assert.equal(m1.bufferSources.length, 1, "hammer transient buffer source expected");
 
-  // Test 2: Fast 16th note at 180 bpm (slotSec = 0.0833s) detaches before next onset
+  // Test 2: Gigglescape distinct voice (shorter decay, 4.02x bell, ±1.8c detune, brighter hammer click)
+  const mGig = makeMockCtx();
+  api.setAudioCtx(mGig.ctx, mGig.ctx.createGain(), { inst: "gig" });
+  api.playToneAt(69, 0, 4.0, { inst: "gig" });
+  const envGig = mGig.gains[1].events;
+  assert.ok(evalGainAt(envGig, 2.0) >= 0.12 && evalGainAt(envGig, 2.0) < evalGainAt(env1, 2.0), "gig must decay faster than casio while remaining audible at 50%");
+  assert.ok(evalGainAt(envGig, 3.6) >= 0.055 && evalGainAt(envGig, 3.6) < evalGainAt(env1, 3.6), "gig must decay faster than casio at 90%");
+  assert.equal(mGig.oscs[0].detune.value, -1.8);
+  assert.equal(mGig.oscs[1].detune.value, 1.8);
+  assert.ok(Math.abs(mGig.oscs[2].frequency.value - 440 * 4.02) < 1e-6, "gig bell partial must be 4.02x");
+  assert.ok(mGig.filters[1].frequency.value > m1.filters[1].frequency.value, "gig hammer BPF must be brighter than casio");
+
+  // Test 3: Fast 16th note at 180 bpm (slotSec = 0.0833s) detaches before next onset & keeps LPF ramps monotonic
   const m2 = makeMockCtx();
-  api.setAudioCtx(m2.ctx, m2.ctx.createGain());
+  api.setAudioCtx(m2.ctx, m2.ctx.createGain(), { inst: "casio" });
   const slot16 = (60 / 180) * 0.25;
-  api.playToneAt(72, 0, slot16);
+  api.playToneAt(72, 0, slot16, { inst: "casio" });
   const env2 = m2.gains[1].events;
   const gateEnd2 = env2[env2.length - 1].t;
   assert.ok(gateEnd2 < slot16, `16th note gateEnd ${gateEnd2} must be < slotSec ${slot16}`);
   assert.ok(m2.oscs[0].stopped <= slot16 + 0.02, "16th note oscillator must stop cleanly");
+  const lpfEvs = m2.filters[0].freqEvents;
+  for (let i = 1; i < lpfEvs.length; i++) {
+    assert.ok(lpfEvs[i].t >= lpfEvs[i - 1].t, "LPF frequency automation timestamps must be monotonic");
+  }
+
+  // Test 4: Legato articulation extends gently past slotSec
+  const mLeg = makeMockCtx();
+  api.setAudioCtx(mLeg.ctx, mLeg.ctx.createGain(), { inst: "casio" });
+  api.playToneAt(69, 0, 0.5, { inst: "casio", legato: true });
+  const envLeg = mLeg.gains[1].events;
+  const gateEndLeg = envLeg[envLeg.length - 1].t;
+  assert.ok(gateEndLeg > 0.5 && gateEndLeg <= 0.555, `legato gateEnd expected ~0.55, got ${gateEndLeg}`);
+
+  // Test 5: Minimal mock fallback (no BiquadFilter / PeriodicWave / BufferSource)
+  const mMin = makeMockCtx({ minimal: true });
+  api.setAudioCtx(mMin.ctx, mMin.ctx.createGain(), { inst: "casio" });
+  api.playToneAt(69, 0, 4.0);
+  const envMin = mMin.gains[1].events;
+  assert.ok(evalGainAt(envMin, 2.0) >= 0.16 && evalGainAt(envMin, 3.6) >= 0.09, "minimal fallback envelope must work");
+
+  // Test 6: Phone-Speaker Master Bus + Room Reverb + navigator.audioSession wiring in ensureAudio()
+  const mBus = makeMockCtx();
+  api.resetAudio();
+  sandbox.AudioContext = function() { return mBus.ctx; };
+  sandbox.navigator.audioSession = { type: "auto" };
+  api.setPiano("casio");
+  assert.equal(api.ensureAudio(), true);
+  assert.equal(sandbox.navigator.audioSession.type, "playback", "must enable native playback audioSession");
+  assert.ok(mBus.gains[0].connections.includes(mBus.ctx.destination), "masterGain must connect straight to destination when audioSession is active");
+  assert.equal(mBus.filters.length, 3, "expected master HPF(115), peaking EQ(2500), and reverb HPF(220)");
+  assert.equal(mBus.filters[0].type, "highpass");
+  assert.equal(mBus.filters[0].frequency.value, 115);
+  assert.equal(mBus.filters[1].type, "peaking");
+  assert.equal(mBus.filters[1].frequency.value, 2500);
+  assert.equal(mBus.filters[1].gain.value, -3.5);
+  assert.equal(mBus.filters[2].type, "highpass");
+  assert.equal(mBus.filters[2].frequency.value, 220);
+  assert.equal(mBus.compressors.length, 1, "master limiter compressor expected");
+  assert.equal(mBus.compressors[0].threshold.value, -6);
+  assert.equal(mBus.convolvers.length, 1, "persistent room convolver expected");
+  assert.equal(mBus.convolvers[0].buffer.numberOfChannels, 2);
+  assert.equal(mBus.convolvers[0].buffer.length, Math.floor(48000 * 0.85));
+
+  // Test 7: stopPlayback() cleanly stops all scheduled voices without leaving orphans
+  const v1 = api.playToneAt(60, 0.1, 1.0, { inst: "casio" });
+  const v2 = api.playToneAt(64, 1.1, 1.0, { inst: "casio" });
+  const v3 = api.playToneAt(67, 2.1, 1.0, { inst: "casio" });
+  assert.equal(api.getScheduledVoices().length, 3);
+  api.stopPlayback();
+  assert.equal(api.getScheduledVoices().length, 0, "stopPlayback must clear scheduledVoices");
+  for (const v of [v1, v2, v3]) {
+    assert.ok(v.osc.stopped <= 0.02, "stopped osc must stop immediately");
+    assert.ok(v.osc2.stopped <= 0.02, "stopped osc2 must stop immediately");
+    assert.ok(v.oscBell.stopped <= 0.02, "stopped bell osc must stop immediately");
+    assert.ok(v.hammerSrc.stopped <= 0.02, "stopped hammer buffer must stop immediately");
+  }
+  delete sandbox.AudioContext;
+  delete sandbox.navigator.audioSession;
+  api.resetAudio();
+}
+
+// ============ Musicality & articulation tests (Stage 1B) ============
+{
+  const seq = api.buildSequence({ startKey: 1, lines: [["C4:1 D4:0.5 E4:0.5 G4:1 G4:1", ""], ["A4:1 R:1 C5:2", ""]] }, "casio");
+  api.computeNoteExpressiveness({ id: "testtune", meter: [4, 4], pickup: 0 }, seq);
+  // Downbeat louder than off-beat eighth
+  assert.ok(seq[0].vel > seq[2].vel, "bar downbeat must have higher velocity than off-beat eighth");
+  // Melodic step with >=0.45 beats uses legato; repeated pitch disables legato and alternates velocity/detune
+  assert.equal(seq[0].legato, true, "melodic step C4->D4 must be legato");
+  assert.equal(seq[3].legato, false, "repeated pitch G4->G4 must keep crisp re-strike gap");
+  assert.notEqual(seq[3].detuneBias, seq[4].detuneBias, "repeated G4 must alternate micro-detune");
+  assert.notEqual(seq[3].vel, seq[4].vel, "repeated G4 must alternate velocity");
+  // Note before rest must not be legato
+  assert.equal(seq[5].legato, false, "note immediately before rest must not be legato");
+  // Final 2 notes get cadence tail flag when >= 6 playable notes
+  assert.equal(seq[7].isCadenceTail, true, "final note must have isCadenceTail");
+  assert.equal(seq[5].isCadenceTail, true, "penultimate playable note must have isCadenceTail");
+  assert.equal(seq[4].isCadenceTail, false);
 }
 
 // ============ Tempo honesty tests (Rank 4) ============
