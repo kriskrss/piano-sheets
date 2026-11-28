@@ -13,6 +13,7 @@
     --canvas:#000000; --card:#121212; --elev:#1f1f1f; --hover:#292929;
     --iron:#333333; --steel:#535353; --fog:#73777c; --mist:#b3b3b3;
     --bone:#c5c5c5; --green:#1ed760; --white:#ffffff;
+    --lh:#509bf5; --lh-ink:#cfe4ff;
     --grad:linear-gradient(90deg,#af2896,#509bf5);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -39,12 +40,15 @@
   .seg{
     display:flex; background:var(--elev); border-radius:9999px; padding:3px; gap:3px;
   }
+  .seg[hidden]{display:none;}
   .seg button{
     flex:1; border:0; background:transparent; color:var(--mist); cursor:pointer;
     font:inherit; font-weight:700; font-size:13px; padding:8px 10px; border-radius:9999px;
   }
   .seg button.active{background:var(--white); color:#000;}
   .seg.small button{font-size:12px; padding:6px 8px;}
+  .handwrap{margin:0;}
+  .handseg{max-width:300px; margin:8px 0 4px;}
   .search{
     display:flex; align-items:center; gap:8px; background:var(--elev);
     border-radius:500px; padding:9px 14px;
@@ -86,6 +90,7 @@
   .cardtitle{font-size:14px; font-weight:600; line-height:1.25; margin:0 0 2px;}
   .cardsub{color:var(--mist); font-size:12px; margin:0;}
   .flagchip{display:inline-block; font-size:11px; font-weight:600; color:#7a4b00; background:#ffe1a8; border-radius:999px; padding:2px 8px; margin:4px 0 0;}
+  .handchip{display:inline-block; font-size:11px; font-weight:600; background:rgba(80,155,245,0.16); color:#8ec2ff; border-radius:999px; padding:2px 8px; margin:4px 6px 0 0;}
   .empty{color:var(--mist); padding:24px 0; text-align:center;}
   /* ---------- focus view ---------- */
   #focus{
@@ -133,6 +138,13 @@
   .kbcaption{display:flex; justify-content:space-between; color:var(--fog);
     font-size:11px; margin-top:5px;}
   .kbcaption .midc{color:var(--green); font-weight:700;}
+  .kb.twohands .wkey .lab{font-size:9px;}
+  .bkey .lab{position:absolute; bottom:2px; left:0; right:0; text-align:center; font-size:8px; font-weight:700; color:#000; line-height:1;}
+  .wkey.lh-start,.bkey.lh-start,.wkey.lh-cur,.bkey.lh-cur{background:var(--lh);}
+  .wkey.rh-start,.bkey.rh-start,.wkey.rh-cur,.bkey.rh-cur{background:var(--green);}
+  .wkey.lh-hold,.bkey.lh-hold{background:rgba(80,155,245,0.55);}
+  .wkey.rh-hold,.bkey.rh-hold{background:rgba(30,215,96,0.55);}
+  .wkey.lh-cur.rh-cur,.bkey.lh-cur.rh-cur,.wkey.lh-start.rh-start,.bkey.lh-start.rh-start,.wkey.lh-hold.rh-cur,.bkey.lh-hold.rh-cur,.wkey.lh-cur.rh-hold,.bkey.lh-cur.rh-hold,.wkey.lh-hold.rh-hold,.bkey.lh-hold.rh-hold{background:linear-gradient(135deg,#509bf5 50%,#1ed760 50%);}
   /* notes */
   .notes{margin-top:16px;}
   .nline{margin:0 0 18px;}
@@ -151,6 +163,34 @@
   .tok.cur{background:var(--green); color:#000; border-radius:6px; padding:0 .12em;}
   .tok.cur .dur{color:#000;}
   .tok.done{color:var(--fog);}
+  .nline.twohands{margin:0 0 20px;}
+  .nline.twohands .thbody{display:flex; align-items:flex-start; gap:8px;}
+  .nline.twohands .nhands{display:flex; flex-direction:column; gap:4px; flex:0 0 auto; padding-top:2px;}
+  .nline.twohands .hbadge{display:flex; align-items:center; justify-content:center; width:22px; border-radius:6px; font-size:11px; font-weight:700;}
+  .nline.twohands .hbadge.rh{min-height:clamp(34px,7.5vw,50px); background:rgba(30,215,96,0.18); color:var(--green);}
+  .nline.twohands .hbadge.lh{min-height:clamp(28px,6.2vw,40px); background:rgba(80,155,245,0.18); color:var(--lh);}
+  .nline.twohands .ncols{display:flex; flex-wrap:wrap; gap:8px 12px; align-items:stretch; flex:1; min-width:0;}
+  .nline.twohands .ncol{display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:4px;}
+  .nline.twohands .ncol-sep{justify-content:center; padding:0 2px;}
+  .nline.twohands .ncol-sep .barline{width:2px; height:100%; min-height:56px; background:var(--iron); border-radius:1px;}
+  .nline.twohands .ncell{display:flex; align-items:center; justify-content:center;}
+  .nline.twohands .ncell.rh{min-height:clamp(34px,7.5vw,50px);}
+  .nline.twohands .ncell.lh{min-height:clamp(28px,6.2vw,40px);}
+  .nline.twohands .tok{margin:0; padding:0 .12em; border-radius:6px;}
+  .nline.twohands .tok.rh{color:var(--white); font-size:clamp(22px,5.4vw,38px);}
+  .nline.twohands .tok.rh.cur{background:var(--green); color:#000;}
+  .nline.twohands .tok.rh.cur .dur{color:#000;}
+  .nline.twohands .tok.rh.holding{outline:2px solid var(--green); background:rgba(30,215,96,0.18); color:var(--white);}
+  .nline.twohands .tok.lh{color:var(--lh-ink); font-size:clamp(18px,4.4vw,28px);}
+  .nline.twohands .tok.lh.chord{letter-spacing:-0.01em;}
+  .nline.twohands .tok.lh.hold .dur{color:var(--lh);}
+  .nline.twohands .tok.lh.cur{background:var(--lh); color:#000;}
+  .nline.twohands .tok.lh.cur .dur{color:#000;}
+  .nline.twohands .tok.lh.holding{outline:2px solid var(--lh); background:rgba(80,155,245,0.18); color:var(--white);}
+  .nline.twohands .tok.done{color:var(--fog);}
+  .hold-trail{color:var(--iron); font-size:14px; font-weight:700; line-height:1; user-select:none;}
+  .hold-trail.lh-on{color:var(--lh);}
+  .hold-trail.rh-on{color:var(--green);}
   .tempo{display:flex; align-items:center; gap:8px; color:var(--mist); font-size:12px; font-weight:700;}
   .tempo input{accent-color:var(--green);}
   .rhythmhint{color:var(--fog); font-size:12px; margin-top:10px;}
@@ -201,6 +241,8 @@
   @media (min-width:700px) and (orientation:portrait){
     .grid{grid-template-columns:repeat(3,1fr);}
     .notes .tok{font-size:clamp(28px,4.5vw,44px);}
+    .nline.twohands .tok.rh{font-size:clamp(24px,4.0vw,38px);}
+    .nline.twohands .tok.lh{font-size:clamp(18px,3.2vw,28px);}
   }
   @media (min-width:1000px) and (orientation:landscape){
     .grid{grid-template-columns:repeat(4,1fr);}
@@ -245,6 +287,12 @@
   <div class="fgroup" id="fGroup"></div>
   <h2 id="fName"></h2>
   <p id="fFlag" class="flagchip" hidden>Rhythm check pending</p>
+  <div class="handwrap">
+    <div class="seg handseg" id="handSeg" role="tablist" aria-label="Choose hand mode" hidden>
+      <button data-hands="one" role="tab" aria-selected="true" class="active">One finger</button>
+      <button data-hands="two" role="tab" aria-selected="false">Two hands</button>
+    </div>
+  </div>
   <div class="startbox" id="fStart"></div>
   <a class="ytlink" id="fYt" href="#" target="_blank" rel="noopener" style="display:none">&#9654; Watch the tutorial on YouTube</a>
   <div class="kbwrap">
@@ -253,7 +301,7 @@
   </div>
   <div class="notes" id="fNotes"></div>
   <div class="tip" id="fTip"></div>
-  <div class="rhythmhint">Small number under each note = beats it lasts. &#189; is quick, 2&#8211;3 is a hold.</div>
+  <div class="rhythmhint" id="rhythmhint">Small number under each note = beats it lasts. &#189; is quick, 2&#8211;3 is a hold.</div>
   <div class="fcontrols">
     <button class="pill green" id="playBtn">&#9654; Play tune</button>
     <label class="tempo">Tempo <input id="tempoRange" type="range" min="36" max="200" step="1" value="100"><span id="tempoVal"></span></label>
@@ -1533,6 +1581,21 @@ function syncSegs(){
     b.classList.toggle("active", b.dataset.piano===piano);
   });
 }
+function syncHandSeg(){
+  document.querySelectorAll("#handSeg button").forEach(b=>{
+    const on = b.dataset.hands === casioHands;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  });
+}
+function setHands(h){
+  stopPlayback();
+  casioHands = h === "two" ? "two" : "one";
+  localStorage.setItem("pianoSheetsHands", casioHands);
+  follow = false; noteIdx = -1;
+  syncHandSeg();
+  if(currentId) renderFocus(false);
+}
 function setPiano(p){
   stopPlayback();
   piano = p; localStorage.setItem("pianoSheetsPiano", p);
@@ -1542,6 +1605,9 @@ function setPiano(p){
 }
 document.querySelectorAll("#pianoSeg button, #pianoSegFocus button").forEach(b=>{
   b.addEventListener("click", ()=> setPiano(b.dataset.piano));
+});
+document.querySelectorAll("#handSeg button").forEach(b=>{
+  b.addEventListener("click", ()=> setHands(b.dataset.hands));
 });
 $("#searchInput").addEventListener("input", e=> renderHome(e.target.value));
 
@@ -1572,6 +1638,11 @@ function renderHome(filter){
         "<p class='cardtitle'></p><p class='cardsub'></p>";
       card.querySelector(".cardtitle").textContent = t.title;
       card.querySelector(".cardsub").textContent = firstNoteLabel(t) + " - " + PIANO_NAMES[piano];
+      if(piano==="casio" && t.casio && t.casio.twoHands){
+        const hc = document.createElement("span");
+        hc.className = "handchip"; hc.textContent = "Two hands";
+        card.appendChild(hc);
+      }
       if(RHYTHM_CHECK_PENDING.has(t.id)){
         const fc = document.createElement("p");
         fc.className = "flagchip"; fc.textContent = "Rhythm check pending";
@@ -1589,9 +1660,40 @@ function renderHome(filter){
     homeEl.appendChild(d);
   }
 }
-/* keyboard strip: whites from C. gig = 15 whites (C..C), casio window = 17 whites (C..E) with middle C at index 8 */
-function buildKeyboard(v){
+/* keyboard strip: whites from C. gig = 15 whites (C..C), casio window = 17 whites (C..E) with middle C at index 8; two-hands = 24 whites (F2..A5) */
+function buildKeyboard(v, tune, tl){
   const kb = $("#fKb"); kb.innerHTML = "";
+  if(isTwoHands(tune)){
+    kb.classList.add("twohands");
+    const whites = 24;
+    const letters = ["C","D","E","F","G","A","B"];
+    const blackAfter = {C:1,D:1,F:1,G:1,A:1};
+    for(let i=1;i<=whites;i++){
+      const wFromC = i + 2;
+      const oct = 2 + Math.floor(wFromC / 7);
+      const letter = letters[wFromC % 7];
+      const midi = (oct + 1) * 12 + SEMI[letter];
+      const w = document.createElement("div");
+      w.className = "wkey";
+      w.dataset.midi = String(midi);
+      if(midi === 60) w.innerHTML = "<div class='lab'>C4</div>";
+      kb.appendChild(w);
+      if(blackAfter[letter] && i < whites){
+        const b = document.createElement("div");
+        b.className = "bkey";
+        b.dataset.midi = String(midi + 1);
+        b.style.left = (i / whites * 100) + "%";
+        b.style.width = (100 / whites * 0.62) + "%";
+        kb.appendChild(b);
+      }
+    }
+    restoreTwoHandKbStart(tl);
+    $("#kbLeft").textContent = "F2";
+    $("#kbMid").textContent = "Blue = Left (L) \u00b7 Middle C = C4 \u00b7 Green = Right (R)";
+    $("#kbRight").textContent = "A5";
+    return;
+  }
+  kb.classList.remove("twohands");
   const whites = piano==="gig" ? 15 : 17;
   const letters = ["C","D","E","F","G","A","B"];
   const blackAfter = {C:1,D:1,F:1,G:1,A:1};
@@ -1613,6 +1715,38 @@ function buildKeyboard(v){
   $("#kbMid").textContent = piano==="gig" ? "Middle C is the 8th white key" : "Middle C = C4";
   $("#kbRight").textContent = piano==="gig" ? "Top C" : "E5";
 }
+function autoTwoHandStart(tl){
+  const firstLh = tl.lhSeq.find(e => e.kind === "note" && !e.tiedContinuation);
+  const firstRh = tl.rhSeq.find(e => e.kind === "note" && !e.tiedContinuation);
+  const lhDesc = firstLh ? firstLh.pitch : "C3";
+  const rhDesc = firstRh ? firstRh.pitch : "C4";
+  return `Left hand (L, blue): start on ${lhDesc}.\nRight hand (R, green): start on ${rhDesc}.`;
+}
+function makeTokSpan(ev, seqIdx, hand){
+  const s = document.createElement("span");
+  s.dataset.seq = String(seqIdx);
+  s.dataset.hand = hand;
+  s.dataset.beats = ev.beats;
+  ev.el = s;
+  ev.trailEls = [];
+  if(ev.kind === "rest"){
+    s.className = "tok " + hand + " rest";
+    s.dataset.rest = "1";
+    const pitchEl = document.createElement("span"); pitchEl.textContent = "\u2013"; s.appendChild(pitchEl);
+    const dur = document.createElement("span"); dur.className = "dur"; dur.textContent = beatsLabel(ev.beats); s.appendChild(dur);
+  } else {
+    const isCont = ev.tiedContinuation;
+    const isChord = ev.midis && ev.midis.length > 1;
+    s.className = "tok " + hand + (isChord ? " chord" : "") + (isCont ? " tie-cont" : "") + (ev.beats > 1 ? " hold" : ev.beats < 1 ? " quick" : "");
+    if(isCont) s.dataset.tie = "1";
+    else s.dataset.note = "1";
+    const pitchEl = document.createElement("span");
+    pitchEl.textContent = ev.pitch + (ev.tied ? "\u203f" : "");
+    s.appendChild(pitchEl);
+    const dur = document.createElement("span"); dur.className = "dur"; dur.textContent = beatsLabel(ev.beats); s.appendChild(dur);
+  }
+  return s;
+}
 function openTune(id){
   stopPlayback();
   currentId = id; follow = false; noteIdx = -1;
@@ -1629,10 +1763,139 @@ function renderFocus(scroll){
   $("#fGroup").textContent = t.group + " - " + PIANO_NAMES[piano];
   $("#fName").textContent = t.title;
   $("#fFlag").hidden = !RHYTHM_CHECK_PENDING.has(t.id);
-  $("#fStart").textContent = v.start;
-  buildKeyboard(v);
-  currentSeq = buildSequence(v);
+  const hasTH = !!(piano==="casio" && t.casio && t.casio.twoHands);
+  const handSegEl = $("#handSeg");
+  if(handSegEl) handSegEl.hidden = !hasTH;
+  syncHandSeg();
+
+  const twoHandsMode = isTwoHands(t);
   const notesEl = $("#fNotes"); notesEl.innerHTML = "";
+  const hintEl = $("#rhythmhint");
+  const tipEl = $("#fTip");
+  const ytEl = $("#fYt");
+
+  if(twoHandsMode){
+    const th = t.casio.twoHands;
+    const tl = buildTwoHandTimeline(t, th);
+    currentTwoHandTimeline = tl;
+    currentSeq = tl.rhSeq;
+    $("#fStart").textContent = th.start || autoTwoHandStart(tl);
+    buildKeyboard(v, t, tl);
+
+    const EPS = 1e-4;
+    const beatKey = b => Math.round(b * 10000);
+    const rhSeqIdxMap = new Map(tl.rhSeq.map((ev, i)=>[ev, i]));
+    const lhSeqIdxMap = new Map(tl.lhSeq.map((ev, i)=>[ev, i]));
+
+    let lineStartBeat = 0;
+    tl.rhLines.forEach((line, li)=>{
+      const rhLineEvs = tl.rhSeq.filter(e=>e.lineIdx===li);
+      const lhLineEvs = tl.lhSeq.filter(e=>e.lineIdx===li);
+      const lineEndBeat = Math.max(
+        rhLineEvs.length ? rhLineEvs[rhLineEvs.length - 1].endBeat : lineStartBeat,
+        lhLineEvs.length ? lhLineEvs[lhLineEvs.length - 1].endBeat : lineStartBeat
+      );
+
+      const sepKeys = new Set();
+      let rb = lineStartBeat;
+      line[0].split(/\s+/).filter(Boolean).forEach(tok=>{
+        if(tok==="|"||tok==="-") sepKeys.add(beatKey(rb));
+        else rb += tokenBeats(tok);
+      });
+      let lb = lineStartBeat;
+      tl.lhLines[li].split(/\s+/).filter(Boolean).forEach(tok=>{
+        if(tok==="|"||tok==="-") sepKeys.add(beatKey(lb));
+        else lb += tokenBeats(tok);
+      });
+
+      const rhByK = new Map(), lhByK = new Map(), keysSet = new Set();
+      rhLineEvs.forEach(ev=>{ const k = beatKey(ev.startBeat); rhByK.set(k, ev); keysSet.add(k); });
+      lhLineEvs.forEach(ev=>{ const k = beatKey(ev.startBeat); lhByK.set(k, ev); keysSet.add(k); });
+      const lineKeys = Array.from(keysSet).sort((a,b)=>a-b);
+
+      const wrap = document.createElement("div"); wrap.className = "nline twohands";
+      const thbody = document.createElement("div"); thbody.className = "thbody";
+      const nhands = document.createElement("div"); nhands.className = "nhands";
+      nhands.innerHTML = "<span class='hbadge rh'>R</span><span class='hbadge lh'>L</span>";
+      const ncols = document.createElement("div"); ncols.className = "ncols";
+
+      const startKeyB = beatKey(lineStartBeat);
+      lineKeys.forEach(k=>{
+        if(k > startKeyB && sepKeys.has(k)){
+          const sepCol = document.createElement("div");
+          sepCol.className = "ncol ncol-sep";
+          sepCol.setAttribute("aria-hidden", "true");
+          sepCol.innerHTML = "<span class='barline'></span>";
+          ncols.appendChild(sepCol);
+        }
+        const col = document.createElement("div"); col.className = "ncol";
+        const rCell = document.createElement("div"); rCell.className = "ncell rh";
+        const lCell = document.createElement("div"); lCell.className = "ncell lh";
+        const rEv = rhByK.get(k) || null;
+        const lEv = lhByK.get(k) || null;
+        const beat = rEv ? rEv.startBeat : lEv.startBeat;
+
+        if(rEv){
+          rCell.appendChild(makeTokSpan(rEv, rhSeqIdxMap.get(rEv), "rh"));
+        } else {
+          const covR = rhLineEvs.find(e => e.kind === "note" && e.startBeat < beat - EPS && beat < e.endBeat - EPS);
+          if(covR){
+            const tr = document.createElement("span");
+            tr.className = "hold-trail";
+            tr.setAttribute("aria-hidden", "true");
+            tr.textContent = "\u2500\u2500";
+            rCell.appendChild(tr);
+            (covR.tieHead || covR).trailEls.push({ el: tr, beat });
+          }
+        }
+        if(lEv){
+          lCell.appendChild(makeTokSpan(lEv, lhSeqIdxMap.get(lEv), "lh"));
+        } else {
+          const covL = lhLineEvs.find(e => e.kind === "note" && e.startBeat < beat - EPS && beat < e.endBeat - EPS);
+          if(covL){
+            const tr = document.createElement("span");
+            tr.className = "hold-trail";
+            tr.setAttribute("aria-hidden", "true");
+            tr.textContent = "\u2500\u2500";
+            lCell.appendChild(tr);
+            (covL.tieHead || covL).trailEls.push({ el: tr, beat });
+          }
+        }
+        col.appendChild(rCell);
+        col.appendChild(lCell);
+        ncols.appendChild(col);
+      });
+
+      thbody.appendChild(nhands);
+      thbody.appendChild(ncols);
+      wrap.appendChild(thbody);
+      const ly = document.createElement("div"); ly.className = "lyric";
+      ly.textContent = line[1]||"";
+      wrap.appendChild(ly);
+      notesEl.appendChild(wrap);
+      lineStartBeat = lineEndBeat;
+    });
+
+    const tipText = th.tip || t.tip;
+    if(tipText){ tipEl.style.display="block"; tipEl.textContent = tipText; }
+    else tipEl.style.display = "none";
+    const ytUrl = th.ytTwoHands || t.yt;
+    if(ytUrl){ ytEl.href = ytUrl; ytEl.style.display = "inline-block"; }
+    else ytEl.style.display = "none";
+    if(hintEl) hintEl.textContent = "Stacked notes play together (R = green right hand, L = blue left hand). C3+G3 means press both keys at once; \u2500\u2500 means keep holding.";
+    const idx = TUNES.indexOf(t);
+    $("#fProgress").textContent = (idx+1) + " of " + TUNES.length;
+    setTempo(t.bpm || 100);
+    updateFollowUI();
+    if(scroll) focusEl.scrollTop = 0;
+    return;
+  }
+
+  currentTwoHandTimeline = null;
+  if(hintEl) hintEl.textContent = "Small number under each note = beats it lasts. \u00bd is quick, 2\u20133 is a hold.";
+  $("#fStart").textContent = v.start;
+  buildKeyboard(v, t, null);
+  currentSeq = buildSequence(v);
   let seqIdx = 0;
   v.lines.forEach(line=>{
     const wrap = document.createElement("div"); wrap.className = "nline";
@@ -1676,10 +1939,8 @@ function renderFocus(scroll){
     wrap.appendChild(ly);
     notesEl.appendChild(wrap);
   });
-  const tipEl = $("#fTip");
   if(t.tip){ tipEl.style.display="block"; tipEl.textContent = t.tip; }
   else tipEl.style.display = "none";
-  const ytEl = $("#fYt");
   if(t.yt){ ytEl.href = t.yt; ytEl.style.display = "inline-block"; }
   else ytEl.style.display = "none";
   const idx = TUNES.indexOf(t);
@@ -1834,6 +2095,7 @@ document.addEventListener("keydown", e=>{
   if(follow && (e.key===" " || e.key==="ArrowRight")){ e.preventDefault(); stepNote(); }
 });
 syncSegs();
+syncHandSeg();
 renderHome("");
 </script>
 </body>
