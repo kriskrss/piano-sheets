@@ -185,11 +185,13 @@ assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 // are quarters, phrase-final notes carry the score's quarter rest in
 // their hold. Gig line totals: 8.5 / 8 / 8 / 7 / 4.75.
 const its = noteTokens(tuneBlock("itsy"));
+const itsAll = allTokens(tuneBlock("itsy"));
 assert.deepEqual(its.slice(0, 12).map(n => n.beats),
-  [0.5,0.75,0.25,0.75,0.25,1,0.75,0.25,0.75,0.25,1,2]);
-for (const [a, b, tot] of [[0,12,8.5],[12,22,8],[22,33,8],[33,43,7],[43,47,4.75]]) {
-  const total = its.slice(a, b).reduce((sum, n) => sum + n.beats, 0);
-  assert.ok(Math.abs(total - tot) < 0.01, `itsy gig notes ${a}-${b} must total ${tot}, got ${total}`);
+  [0.5,0.75,0.25,0.75,0.25,1,0.75,0.25,0.75,0.25,1,1]);
+assert.deepEqual(itsAll.slice(11, 13).map(n => [n.kind, n.beats]), [["note", 1], ["rest", 1]]);
+for (const [a, b, tot] of [[0,13,8.5],[13,24,8],[24,35,8],[35,46,7],[46,50,4.75]]) {
+  const total = itsAll.slice(a, b).reduce((sum, n) => sum + n.beats, 0);
+  assert.ok(Math.abs(total - tot) < 0.01, `itsy gig tokens ${a}-${b} must total ${tot}, got ${total}`);
 }
 
 // Married Life (Up): Betacustic beginner sheet (Musicnotes MN0233977,
@@ -253,8 +255,11 @@ assert.deepEqual(hp.slice(27, 31).map(n => n.beats), [1,1,0.5,0.5]);
 // sixteenth figures; rests folded into the preceding holds (the
 // bar-1 F takes the sixteenth rest, bar-5 C the eighth rest).
 const hf = noteTokens(tuneBlock("howfarillgo"));
+const hfAll = allTokens(tuneBlock("howfarillgo"));
 assert.deepEqual(hf.slice(0, 3).map(n => n.pitch), ["F","C","F"]);
-assert.deepEqual(hf.slice(0, 3).map(n => n.beats), [1,0.5,0.75]);
+assert.deepEqual(hf.slice(0, 3).map(n => n.beats), [1,0.5,0.5]);
+assert.equal(hfAll[3].kind, "rest");
+assert.equal(hfAll[3].beats, 0.25);
 
 // We Don't Talk About Bruno: Betacustic beginner sheet (Musicnotes
 // MN0248513, C minor, 4/4, q=104), page-1 preview bars 1-10 (Pepa's
@@ -301,8 +306,11 @@ assert.deepEqual(pf.slice(0, 4).map(n => n.beats), [0.5,0.5,0.5,3]);
 // the singing enters at bar 5 (B B C, then D C B C twice); the
 // eighth rests after the D notes are folded into their holds.
 const md = noteTokens(tuneBlock("amilliondreams"));
+const mdAll = allTokens(tuneBlock("amilliondreams"));
 assert.deepEqual(md.slice(0, 3).map(n => n.pitch), ["B","B","C+"]);
-assert.deepEqual(md.slice(0, 5).map(n => n.beats), [0.5,1,1,1.5,0.5]);
+assert.deepEqual(md.slice(0, 5).map(n => n.beats), [0.5,1,1,1,0.5]);
+assert.equal(mdAll[4].kind, "rest");
+assert.equal(mdAll[4].beats, 0.5);
 
 // I See The Light: Betacustic beginner sheet (Musicnotes MN0222534,
 // C major, 4/4, q = 80), page-1 preview (10 bars), cross-checked
@@ -620,7 +628,8 @@ assert.deepEqual(showyourselfN.slice(29, 33).map(n => n.beats), [0.5, 0.67, 0.67
 const rewritethestarsN = noteTokens(tuneBlock("rewritethestars"));
 assert.deepEqual(rewritethestarsN.slice(0, 5).map(n => n.pitch), ["A#", "A#", "A#", "C", "D"]);
 assert.deepEqual(rewritethestarsN.slice(0, 5).map(n => n.beats), [0.5, 0.5, 0.5, 1, 1]);
-assert.deepEqual(rewritethestarsN.slice(13, 16).map(n => n.beats), [1.5, 0.5, 2.5]);
+assert.equal(rewritethestarsN[4].tied, true);
+assert.deepEqual(rewritethestarsN.slice(13, 17).map(n => n.beats), [0.5, 1, 0.5, 2.5]);
 
 
 // Bohemian Rhapsody: Betacustic beginner sheet (Musicnotes
@@ -774,8 +783,13 @@ assert.deepEqual(megaN.slice(35, 40).map(n => n.beats), [1, 1, 0.5, 0.5, 0.5]);
 // at the line break as 4 + 2; bar 8 is a full-bar rest and
 // is skipped. Everything below C4 folds +12 on the gig board.
 const godzillaN = noteTokens(tuneBlock("godzilla"));
+const godzillaAll = allTokens(tuneBlock("godzilla"));
 assert.deepEqual(godzillaN.slice(0, 5).map(n => n.pitch), ["E", "G#", "D", "D#", "A"]);
 assert.deepEqual(godzillaN.slice(0, 5).map(n => n.beats), [4, 1, 1, 1, 1]);
+assert.equal(godzillaN[8].tied, true);
+assert.equal(godzillaN[8].beats, 2);
+assert.equal(godzillaN[9].beats, 4);
+assert.ok(godzillaAll.some(t => t.kind === "rest" && t.beats === 4), "Godzilla bar 8 rest must be restored");
 assert.deepEqual(godzillaN.slice(24, 30).map(n => n.beats), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
 
 
@@ -1023,19 +1037,13 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES
-const PENDING_RESTORE = new Set([
-  "allofme","amilliondreams","amongusdrip","athousandyears","beautifulinwhite",
-  "bloodymary","bohemianrhapsody","faded","fnaf","godzilla","gravityfalls",
-  "hallelujah","hereiamtoworship","hesapirate","howfarillgo","itsy","miraculous",
-  "oceans","overtherainbow","perfect","rewritethestars","shallow","toxic","tryeverything",
-  "allisfound"
-]);
+// Bar-sum validation across TUNES (45 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
   "awholenewworld","canthelpfalling","countonme","dancemonkey","diewithasmile",
-  "flowers","flymetothemoon","leanonme","letitgo","marriedlife","megalovania",
-  "myheartwillgoon","peaches","pinkpanther","riverflowsinyou","showyourself",
-  "someonelikeyou","wearethechampions","wedonttalkaboutbruno","whatawonderfulworld"
+  "flowers","flymetothemoon","godzilla","itsy","leanonme","letitgo","marriedlife",
+  "megalovania","myheartwillgoon","peaches","pinkpanther","riverflowsinyou",
+  "showyourself","someonelikeyou","wearethechampions","wedonttalkaboutbruno",
+  "whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1043,9 +1051,11 @@ const LEGACY_UNMETERED = new Set([
 ]);
 
 assert.equal(api.TUNES.length, 80, "must have all 80 tunes");
+let barValidatedCount = 0;
 for (const t of api.TUNES) {
   assert.ok(Array.isArray(t.meter) && t.meter.length === 2, `${t.id}: missing meter`);
-  if (PENDING_RESTORE.has(t.id) || NEEDS_SOURCE_CHECK.has(t.id) || LEGACY_UNMETERED.has(t.id)) continue;
+  if (NEEDS_SOURCE_CHECK.has(t.id) || LEGACY_UNMETERED.has(t.id)) continue;
+  barValidatedCount++;
   const barBeats = t.meter[0] * (4 / t.meter[1]);
   const pickup = t.pickup || 0;
   let total = 0, hasComplementaryEnd = false;
@@ -1072,6 +1082,19 @@ for (const t of api.TUNES) {
     assert.ok(totRem < 1e-4 || Math.abs(totRem - barBeats) < 1e-4,
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
+}
+assert.equal(barValidatedCount, 45, "expected 45 bar-sum validated tunes");
+
+// Verify restored rests & ties on key tunes
+for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate"]) {
+  const t = api.TUNES.find(x => x.id === tid);
+  const seq = api.buildSequence(t.casio, "casio");
+  assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
+}
+for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfound","shallow","godzilla"]) {
+  const t = api.TUNES.find(x => x.id === tid);
+  const seq = api.buildSequence(t.casio, "casio");
+  assert.ok(seq.some(e => e.tiedContinuation), `${tid} must contain merged cross-bar ties`);
 }
 
 console.log("cadence ok:", bpms.length, "tunes with bpm");
