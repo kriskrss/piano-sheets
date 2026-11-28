@@ -97,7 +97,7 @@ function makeEl(tag = "div") {
 const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>/);
 assert.ok(scriptMatch, "missing <script> block");
 const domMap = new Map();
-for (const id of ["home","focus","fTitle","fGroup","fName","fFlag","fStart","fKb","kbLeft","kbMid","kbRight","fNotes","fTip","fYt","fProgress","tempoRange","tempoVal","playBtn","followBtn","nextNoteBtn","resetBtn","wakeBtn","backBtn","prevTune","nextTune","searchInput"]) {
+for (const id of ["home","focus","fTitle","fGroup","fName","fFlag","handSeg","fStart","fKb","kbLeft","kbMid","kbRight","fNotes","fTip","fYt","rhythmhint","fProgress","tempoRange","tempoVal","playBtn","followBtn","nextNoteBtn","resetBtn","wakeBtn","backBtn","prevTune","nextTune","searchInput"]) {
   domMap.set("#" + id, makeEl(id === "tempoRange" ? "input" : "div"));
 }
 domMap.get("#tempoRange").min = "36";
@@ -136,7 +136,7 @@ const sandbox = {
   }
 };
 sandbox.window = sandbox;
-vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, VOICE_PRESETS, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenKey, beatsLabel, buildSequence, firstNoteLabel, casioMidi, generateGigVariant, playToneAt, ensureAudio, stopPlayback, computeNoteExpressiveness, setPiano, setTempo, tempoBpm, getScheduledVoices(){ return scheduledVoices; }, resetAudio(){ audioCtx = null; masterGain = null; songBus = null; masterEqNode = null; revSendNode = null; hammerBuf = null; speakerEl = null; speakerDest = null; hasNativePlaybackSession = false; waveCache.clear(); scheduledVoices = []; }, setAudioCtx(c, m, opts){ audioCtx = c; masterGain = m; songBus = null; masterEqNode = null; revSendNode = null; waveCache.clear(); scheduledVoices = []; hammerBuf = (c && c.createBuffer) ? buildHammerBuffer(c) : null; if(opts && opts.inst) piano = opts.inst; } };", sandbox);
+vm.runInNewContext(scriptMatch[1] + "\nthis.__api = { TUNES, VOICE_PRESETS, RHYTHM_CHECK_PENDING, LH_VEL_SCALE, isRestToken, isTiedToken, tokenBeats, tokenPitch, tokenPitches, tokenKey, beatsLabel, buildSequence, buildTwoHandTimeline, firstNoteLabel, casioMidi, generateGigVariant, playToneAt, playTune, openTune, stepNote, ensureAudio, stopPlayback, computeNoteExpressiveness, setPiano, setHands, isTwoHands, setTempo, tempoBpm, getScheduledVoices(){ return scheduledVoices; }, getActiveStepVoices(){ return activeStepVoices; }, getFollowBtn(){ return { follow, noteIdx }; }, startFollow(){ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; stepHandEndBeat = { rh: -1, lh: -1 }; updateFollowUI(); if(currentTwoHandTimeline && currentTwoHandTimeline.playableSlices[0]) triggerTwoHandStepAudio(currentTwoHandTimeline.playableSlices[0]); }, resetAudio(){ audioCtx = null; masterGain = null; songBus = null; masterEqNode = null; revSendNode = null; hammerBuf = null; speakerEl = null; speakerDest = null; hasNativePlaybackSession = false; waveCache.clear(); scheduledVoices = []; activeStepVoices = { rh: [], lh: [] }; stepHandEndBeat = { rh: -1, lh: -1 }; }, setAudioCtx(c, m, opts){ audioCtx = c; masterGain = m; songBus = null; masterEqNode = null; revSendNode = null; waveCache.clear(); scheduledVoices = []; activeStepVoices = { rh: [], lh: [] }; stepHandEndBeat = { rh: -1, lh: -1 }; hammerBuf = (c && c.createBuffer) ? buildHammerBuffer(c) : null; if(opts && opts.inst) piano = opts.inst; } };", sandbox);
 const api = sandbox.__api;
 
 function gigAllTokens(id) {
@@ -1151,129 +1151,130 @@ for (const tid of ["oceans","rewritethestars","toxic","tryeverything","allisfoun
 }
 
 // ============ Envelope & voice tests (mock AudioContext, Section 4.5) ============
-{
-  const makeMockCtx = (opts = {}) => {
-    const minimal = !!opts.minimal;
-    const gains = [];
-    const oscs = [];
-    const filters = [];
-    const compressors = [];
-    const convolvers = [];
-    const bufferSources = [];
-    const periodicWaves = [];
-    const makeParam = (initVal) => {
-      const events = [];
-      return {
-        value: initVal,
-        events,
-        setValueAtTime(v, t) { events.push({ op: "set", v, t }); },
-        linearRampToValueAtTime(v, t) { events.push({ op: "lin", v, t }); },
-        exponentialRampToValueAtTime(v, t) { events.push({ op: "exp", v, t }); },
-        cancelScheduledValues() {}
-      };
+const makeMockCtx = (opts = {}) => {
+  const minimal = !!opts.minimal;
+  const gains = [];
+  const oscs = [];
+  const filters = [];
+  const compressors = [];
+  const convolvers = [];
+  const bufferSources = [];
+  const periodicWaves = [];
+  const makeParam = (initVal) => {
+    const events = [];
+    return {
+      value: initVal,
+      events,
+      setValueAtTime(v, t) { events.push({ op: "set", v, t }); },
+      linearRampToValueAtTime(v, t) { events.push({ op: "lin", v, t }); },
+      exponentialRampToValueAtTime(v, t) { events.push({ op: "exp", v, t }); },
+      cancelScheduledValues() {}
     };
-    const ctx = {
-      sampleRate: 48000,
-      currentTime: 0,
-      state: "running",
-      destination: { _dest: true },
-      createGain() {
-        const gParam = makeParam(1);
-        const node = {
-          events: gParam.events,
-          gain: gParam,
-          connections: [],
-          connect(dest) { node.connections.push(dest); }
-        };
-        gains.push(node);
-        return node;
-      },
-      createOscillator() {
-        const osc = {
-          type: "sine",
-          frequency: { value: 440 },
-          detune: { value: 0 },
-          periodicWave: null,
-          started: null,
-          stopped: null,
-          connections: [],
-          setPeriodicWave(pw) { osc.periodicWave = pw; },
-          connect(dest) { osc.connections.push(dest); },
-          start(t) { osc.started = t; },
-          stop(t) { osc.stopped = t; }
-        };
-        oscs.push(osc);
-        return osc;
-      }
-    };
-    if (!minimal) {
-      ctx.createBiquadFilter = () => {
-        const freq = makeParam(350);
-        const f = {
-          type: "lowpass",
-          frequency: freq,
-          freqEvents: freq.events,
-          Q: { value: 1 },
-          gain: { value: 0 },
-          connections: [],
-          connect(dest) { f.connections.push(dest); }
-        };
-        filters.push(f);
-        return f;
-      };
-      ctx.createDynamicsCompressor = () => {
-        const c = {
-          threshold: { value: -24 },
-          knee: { value: 30 },
-          ratio: { value: 12 },
-          attack: { value: 0.003 },
-          release: { value: 0.25 },
-          connections: [],
-          connect(dest) { c.connections.push(dest); }
-        };
-        compressors.push(c);
-        return c;
-      };
-      ctx.createConvolver = () => {
-        const cv = {
-          buffer: null,
-          connections: [],
-          connect(dest) { cv.connections.push(dest); }
-        };
-        convolvers.push(cv);
-        return cv;
-      };
-      ctx.createBuffer = (channels, length, sampleRate) => {
-        const data = Array.from({ length: channels }, () => new Float32Array(length));
-        return {
-          numberOfChannels: channels,
-          length,
-          sampleRate,
-          getChannelData(ch) { return data[ch]; }
-        };
-      };
-      ctx.createBufferSource = () => {
-        const bs = {
-          buffer: null,
-          started: null,
-          stopped: null,
-          connections: [],
-          connect(dest) { bs.connections.push(dest); },
-          start(t) { bs.started = t; },
-          stop(t) { bs.stopped = t; }
-        };
-        bufferSources.push(bs);
-        return bs;
-      };
-      ctx.createPeriodicWave = (real, imag) => {
-        const pw = { real: Array.from(real), imag: Array.from(imag) };
-        periodicWaves.push(pw);
-        return pw;
-      };
-      ctx.createMediaStreamDestination = () => ({ stream: {} });
-    }
-    return { ctx, gains, oscs, filters, compressors, convolvers, bufferSources, periodicWaves };
   };
+  const ctx = {
+    sampleRate: 48000,
+    currentTime: 0,
+    state: "running",
+    destination: { _dest: true },
+    createGain() {
+      const gParam = makeParam(1);
+      const node = {
+        events: gParam.events,
+        gain: gParam,
+        connections: [],
+        connect(dest) { node.connections.push(dest); }
+      };
+      gains.push(node);
+      return node;
+    },
+    createOscillator() {
+      const osc = {
+        type: "sine",
+        frequency: { value: 440 },
+        detune: { value: 0 },
+        periodicWave: null,
+        started: null,
+        stopped: null,
+        connections: [],
+        setPeriodicWave(pw) { osc.periodicWave = pw; },
+        connect(dest) { osc.connections.push(dest); },
+        start(t) { osc.started = t; },
+        stop(t) { osc.stopped = t; }
+      };
+      oscs.push(osc);
+      return osc;
+    }
+  };
+  if (!minimal) {
+    ctx.createBiquadFilter = () => {
+      const freq = makeParam(350);
+      const f = {
+        type: "lowpass",
+        frequency: freq,
+        freqEvents: freq.events,
+        Q: { value: 1 },
+        gain: { value: 0 },
+        connections: [],
+        connect(dest) { f.connections.push(dest); }
+      };
+      filters.push(f);
+      return f;
+    };
+    ctx.createDynamicsCompressor = () => {
+      const c = {
+        threshold: { value: -24 },
+        knee: { value: 30 },
+        ratio: { value: 12 },
+        attack: { value: 0.003 },
+        release: { value: 0.25 },
+        connections: [],
+        connect(dest) { c.connections.push(dest); }
+      };
+      compressors.push(c);
+      return c;
+    };
+    ctx.createConvolver = () => {
+      const cv = {
+        buffer: null,
+        connections: [],
+        connect(dest) { cv.connections.push(dest); }
+      };
+      convolvers.push(cv);
+      return cv;
+    };
+    ctx.createBuffer = (channels, length, sampleRate) => {
+      const data = Array.from({ length: channels }, () => new Float32Array(length));
+      return {
+        numberOfChannels: channels,
+        length,
+        sampleRate,
+        getChannelData(ch) { return data[ch]; }
+      };
+    };
+    ctx.createBufferSource = () => {
+      const bs = {
+        buffer: null,
+        started: null,
+        stopped: null,
+        connections: [],
+        connect(dest) { bs.connections.push(dest); },
+        start(t) { bs.started = t; },
+        stop(t) { bs.stopped = t; }
+      };
+      bufferSources.push(bs);
+      return bs;
+    };
+    ctx.createPeriodicWave = (real, imag) => {
+      const pw = { real: Array.from(real), imag: Array.from(imag) };
+      periodicWaves.push(pw);
+      return pw;
+    };
+    ctx.createMediaStreamDestination = () => ({ stream: {} });
+  }
+  return { ctx, gains, oscs, filters, compressors, convolvers, bufferSources, periodicWaves };
+};
+
+{
 
   function evalGainAt(events, t) {
     let prev = events[0];
@@ -1477,6 +1478,232 @@ assert.ok(!/gig:\{/.test(html), "hand-authored gig variants must be removed");
     }
     assert.equal(gig.startKey, firstGigKey, `${t.id}: startKey must equal first note's key`);
   }
+}
+
+// ============ Two-hand Casio mode tests (Phase 1 pilot & engine) ============
+{
+  // 1. Chord grammar & Gigglescape non-collision
+  assert.deepEqual(api.tokenPitches("C3+E3+G3:2~"), ["C3", "E3", "G3"]);
+  assert.deepEqual(api.tokenPitches("C3+G3:4"), ["C3", "G3"]);
+  assert.deepEqual(api.tokenPitches("C4"), ["C4"]);
+  assert.deepEqual(api.tokenPitches("C+:2@8"), ["C+"], "Gigglescape C+ must not split on +");
+  assert.deepEqual(api.tokenPitches("C-:1@1"), ["C-"]);
+  assert.equal(api.tokenBeats("C3+E3+G3:2~"), 2);
+  assert.equal(api.isTiedToken("E3+B3:3~"), true);
+
+  const chordSeq = api.buildSequence({ lines: [["C3+E3+G3:2~", ""], ["C3+E3+G3:2 C3+G3:2", ""]] }, "casio");
+  assert.deepEqual(chordSeq[0].midis, [48, 52, 55]);
+  assert.equal(chordSeq[0].midi, 48);
+  assert.equal(chordSeq[0].totalBeats, 4, "tied chords must accumulate totalBeats");
+  assert.equal(chordSeq[1].tiedContinuation, true);
+  assert.equal(chordSeq[2].tiedContinuation, false);
+
+  const mismatchTie = api.buildSequence({ lines: [["C3+G3:2~ C3+E3:2", ""]] }, "casio");
+  assert.equal(mismatchTie[1].tiedContinuation, false, "mismatched chord pitch set must not tie");
+
+  // 2. Pilot scope, RHYTHM_CHECK_PENDING, mode isolation, and Gigglescape invariance
+  const EXPECTED_PILOT = ["canthelpfalling","faded","hedwig","hotcross","interstellar","letitgo","silentnight","twinkle"];
+  const pilotTunes = api.TUNES.filter(t => t.casio && t.casio.twoHands);
+  assert.deepEqual(pilotTunes.map(t => t.id).sort(), EXPECTED_PILOT, "only the 8 Phase 1 pilot tunes may have twoHands data");
+  assert.deepEqual(
+    Array.from(api.RHYTHM_CHECK_PENDING).sort(),
+    ["itsy","leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"],
+    "RHYTHM_CHECK_PENDING set must stay unchanged"
+  );
+
+  api.setPiano("gig");
+  api.setHands("two");
+  for (const t of pilotTunes) {
+    assert.equal(api.isTwoHands(t), false, `${t.id}: isTwoHands must be false on Gigglescape`);
+  }
+  api.setPiano("casio");
+  api.setHands("one");
+  for (const t of pilotTunes) {
+    assert.equal(api.isTwoHands(t), false, `${t.id}: isTwoHands must be false in One finger mode`);
+  }
+  api.setHands("two");
+  for (const t of api.TUNES) {
+    assert.equal(api.isTwoHands(t), EXPECTED_PILOT.includes(t.id), `${t.id}: isTwoHands mismatch`);
+  }
+  api.openTune("mary");
+  assert.equal(sandbox.localStorage.getItem("pianoSheetsHands"), "two", "stepping onto un-arranged tune must not overwrite localStorage");
+
+  for (const t of pilotTunes) {
+    const clone = {
+      id: t.id, title: t.title, group: t.group, glyph: t.glyph, bpm: t.bpm, yt: t.yt,
+      meter: t.meter, pickup: t.pickup, barMeters: t.barMeters, gigStart: t.gigStart, gigShift: t.gigShift,
+      casio: { startKey: t.casio.startKey, start: t.casio.start, lines: t.casio.lines }
+    };
+    assert.deepEqual(api.generateGigVariant(t), api.generateGigVariant(clone), `${t.id}: Gigglescape output must ignore twoHands`);
+  }
+
+  // 3. Strict validator across every t.casio.twoHands entry
+  const isMultiple = (v, m) => {
+    const r = ((v % m) + m) % m;
+    return r < 1e-4 || Math.abs(r - m) < 1e-4;
+  };
+  const sumTokens = str => str.split(/\s+/).filter(x => x && x !== "|" && x !== "-").reduce((s, x) => s + api.tokenBeats(x), 0);
+
+  for (const t of pilotTunes) {
+    const th = t.casio.twoHands;
+    const rhLines = (th.rh && th.rh.length) ? th.rh : t.casio.lines;
+    const lhLines = th.lh;
+    assert.ok(Array.isArray(lhLines) && lhLines.length === rhLines.length, `${t.id}: lh/rh line count mismatch`);
+
+    const barBeats = t.meter[0] * (4 / t.meter[1]);
+    const pickup = t.pickup || 0;
+    let total = 0, hasComplementaryEnd = false, pickupCarriedToEnd = false;
+
+    rhLines.forEach((line, li) => {
+      const rhText = line[0], lhText = lhLines[li];
+      const rhSum = sumTokens(rhText), lhSum = sumTokens(lhText);
+      assert.ok(Math.abs(lhSum - rhSum) < 1e-4, `${t.id} line ${li}: LH sum (${lhSum}) != RH sum (${rhSum})`);
+
+      if (rhText.includes("|") && lhText.includes("|")) {
+        const rhSub = rhText.split("|").map(s => sumTokens(s.trim()));
+        const lhSub = lhText.split("|").map(s => sumTokens(s.trim()));
+        assert.equal(lhSub.length, rhSub.length, `${t.id} line ${li}: sub-bar | count mismatch`);
+        for (let si = 0; si < rhSub.length; si++) {
+          assert.ok(Math.abs(lhSub[si] - rhSub[si]) < 1e-4, `${t.id} line ${li} sub-bar ${si}: LH ${lhSub[si]} != RH ${rhSub[si]}`);
+        }
+      }
+
+      // Strict meter check (no LEGACY_UNMETERED exemptions)
+      total += rhSum;
+      const expectedBar = (t.barMeters && t.barMeters[li]) || barBeats;
+      if (li === 0 && pickup > 0) {
+        if (isMultiple(rhSum - pickup, expectedBar)) {
+          // standard pickup on line 0
+        } else if (rhLines.length > 1 && rhSum > 0 && isMultiple(rhSum, expectedBar)) {
+          pickupCarriedToEnd = true;
+        } else {
+          assert.fail(`${t.id} twoHands line 0 (${rhSum}) minus pickup (${pickup}) not multiple of ${expectedBar}`);
+        }
+      } else if (li === rhLines.length - 1 && pickup > 0 && pickupCarriedToEnd) {
+        assert.ok(rhSum > 0 && isMultiple(rhSum - pickup, expectedBar), `${t.id} twoHands final line ${li} pickup mismatch`);
+      } else if (li === rhLines.length - 1 && pickup > 0 && isMultiple(rhSum + pickup, expectedBar)) {
+        hasComplementaryEnd = true;
+      } else {
+        assert.ok(rhSum > 0 && isMultiple(rhSum, expectedBar), `${t.id} twoHands line ${li} sum ${rhSum} not multiple of ${expectedBar}`);
+      }
+
+      // Token syntax checks
+      for (const tok of rhText.split(/\s+/).filter(Boolean)) {
+        if (tok === "|" || tok === "-" || api.isRestToken(tok)) continue;
+        assert.ok(/^[A-G](#|b)?\d$/.test(api.tokenPitch(tok)), `${t.id} RH token must be single Casio pitch: ${tok}`);
+      }
+      for (const tok of lhText.split(/\s+/).filter(Boolean)) {
+        if (tok === "|" || tok === "-" || api.isRestToken(tok)) continue;
+        const ps = api.tokenPitches(tok);
+        assert.ok(ps.length >= 1 && ps.length <= 3, `${t.id} LH chord cap 1..3 violated: ${tok}`);
+        assert.ok(ps.every(p => /^[A-G](#|b)?\d$/.test(p)), `${t.id} invalid LH pitch in ${tok}`);
+      }
+    });
+
+    const totCheck = hasComplementaryEnd ? total : (total - pickup);
+    const totRem = totCheck % barBeats;
+    if (!t.barMeters) {
+      assert.ok(totRem < 1e-4 || Math.abs(totRem - barBeats) < 1e-4, `${t.id} twoHands total ${total} not multiple of ${barBeats}`);
+    }
+
+    // Ergonomics, MIDI window (41..81), ties, and no hand crossing
+    const tl = api.buildTwoHandTimeline(t, th);
+    for (const [hand, seq] of [["rh", tl.rhSeq], ["lh", tl.lhSeq]]) {
+      for (let i = 0; i < seq.length; i++) {
+        const ev = seq[i];
+        if (ev.kind === "note") {
+          for (let k = 0; k < ev.midis.length; k++) {
+            assert.ok(ev.midis[k] >= 41 && ev.midis[k] <= 81, `${t.id} ${hand}[${i}] MIDI ${ev.midis[k]} out of F2..A5 (41..81)`);
+            if (k > 0) assert.ok(ev.midis[k] > ev.midis[k - 1], `${t.id} ${hand}[${i}] pitches not strictly ascending`);
+          }
+          assert.ok(ev.midis[ev.midis.length - 1] - ev.midis[0] <= 12, `${t.id} ${hand}[${i}] span > 12 semitones`);
+        }
+        if (ev.tied) {
+          const nxt = seq[i + 1];
+          assert.ok(nxt && nxt.kind === "note" && nxt.tiedContinuation, `${t.id} ${hand}[${i}] tie (~) must continue into matching note/chord`);
+        }
+      }
+    }
+    for (const s of tl.slices) {
+      if (s.lhActive && s.rhActive) {
+        const lhMax = Math.max(...s.lhActive.midis);
+        const rhMin = Math.min(...s.rhActive.midis);
+        assert.ok(lhMax <= rhMin, `${t.id} beat ${s.beat}: hands cross (LH max ${lhMax} > RH min ${rhMin})`);
+      }
+    }
+  }
+
+  // 4. Zero-drift beatToSec & mock AudioContext polyphonic playback + follow-along sustain
+  for (const tid of ["twinkle", "hedwig"]) {
+    const t = api.TUNES.find(x => x.id === tid);
+    api.setTempo(t.bpm);
+    const tl = api.buildTwoHandTimeline(t, t.casio.twoHands);
+    assert.ok(Number.isFinite(tl.cadenceBeat), `${tid}: expected finite cadenceBeat`);
+    const bs = 60 / t.bpm;
+    const pre = tl.beatToSec(tl.cadenceBeat);
+    const post = tl.beatToSec(tl.cadenceBeat + 1);
+    assert.ok(Math.abs(pre - tl.cadenceBeat * bs) < 1e-9);
+    assert.ok(Math.abs((post - pre) - bs * 1.08) < 1e-9, `${tid}: cadence tail must stretch 1.08x`);
+    for (const s of tl.slices) {
+      assert.equal(s.atSec, tl.beatToSec(s.beat), `${tid}: slice.atSec must match shared beatToSec`);
+    }
+  }
+
+  const mTH = makeMockCtx();
+  api.setAudioCtx(mTH.ctx, mTH.ctx.createGain(), { inst: "casio" });
+  api.setPiano("casio");
+  api.setHands("two");
+  api.openTune("twinkle");
+  api.playTune();
+  const voices = [...api.getScheduledVoices()];
+  assert.ok(voices.length > 50, `expected >50 scheduled voices in twinkle twoHands, got ${voices.length}`);
+
+  // Slice 0 (beat 0): C3 (48), G3 (55) at +0ms / +8ms; RH C4 (60) at +4ms
+  const vC3 = voices[0], vG3 = voices[1], vC4 = voices[2];
+  assert.ok(Math.abs(vC3.osc.frequency.value - 440 * Math.pow(2, (48 - 69) / 12)) < 0.01);
+  assert.ok(Math.abs(vG3.osc.frequency.value - 440 * Math.pow(2, (55 - 69) / 12)) < 0.01);
+  assert.ok(Math.abs(vC4.osc.frequency.value - 440 * Math.pow(2, (60 - 69) / 12)) < 0.01);
+  assert.ok(Math.abs((vG3.osc.started - vC3.osc.started) - 0.008) < 1e-9, "2-note chord micro-roll must be 8ms");
+  assert.ok(Math.abs((vC4.osc.started - vC3.osc.started) - 0.004) < 1e-9, "RH simultaneous strike must offset +4ms");
+
+  // Last slice (beat 46): 3-note LH triad C3+E3+G3 (48, 52, 55) + RH C4 (60)
+  const vTri0 = voices[voices.length - 4], vTri1 = voices[voices.length - 3], vTri2 = voices[voices.length - 2], vTriRh = voices[voices.length - 1];
+  assert.ok(Math.abs((vTri1.osc.started - vTri0.osc.started) - 0.008) < 1e-9);
+  assert.ok(Math.abs((vTri2.osc.started - vTri0.osc.started) - 0.016) < 1e-9, "3-note chord micro-roll must span 16ms");
+  assert.ok(Math.abs((vTriRh.osc.started - vTri0.osc.started) - 0.004) < 1e-9);
+  // Verify exact LH_VEL_SCALE = 0.68 and n^-0.35 chord-size scaling on 2-note (vC3) and 3-note (vTri0)
+  const expectedC3Peak = (0.95 + 0.08) * Math.pow(0.95 * 0.68 / Math.pow(2, 0.35), 1.15);
+  assert.ok(Math.abs(vC3.g.events[1].v - expectedC3Peak) < 1e-6, `LH dyad peakGain ${vC3.g.events[1].v} != ${expectedC3Peak}`);
+  assert.ok(vTri0.g.events[1].v < vTriRh.g.events[1].v * 0.55, "3-note LH voice peak gain must stay scaled well below RH melody");
+  assert.ok(vC3.g.events[1].v < vC4.g.events[1].v, "LH dyad peak gain must be softer than RH downbeat");
+
+  api.stopPlayback();
+  assert.equal(api.getScheduledVoices().length, 0, "stopPlayback must clear all two-hand voices");
+  for (const v of voices) {
+    assert.ok(v.osc.stopped <= 0.02, "every two-hand voice must stop cleanly on stopPlayback");
+  }
+
+  // Follow-along per-hand sustain check on twinkle
+  api.startFollow();
+  let stepV = api.getActiveStepVoices();
+  assert.equal(stepV.lh.length, 2, "step 0 must strike 2 LH voices (C3+G3)");
+  assert.equal(stepV.rh.length, 1, "step 0 must strike 1 RH voice (C4)");
+  const heldLhOsc = stepV.lh[0].osc;
+  const firstRhOsc = stepV.rh[0].osc;
+  api.stepNote(); // beat 1: RH C4 attacks while LH C3+G3 sustains
+  stepV = api.getActiveStepVoices();
+  assert.ok(firstRhOsc.stopped !== null && firstRhOsc.stopped <= 0.03, "step 1 must damp previous RH voice");
+  assert.ok(heldLhOsc.stopped > 1.0, "step 1 must NOT damp held LH C3+G3 chord");
+  assert.equal(stepV.lh.length, 2);
+  api.stepNote(); // beat 2
+  api.stepNote(); // beat 3
+  api.stepNote(); // beat 4: LH F3+A3 attacks -> damps old LH C3+G3
+  assert.ok(heldLhOsc.stopped <= 0.03, "step 4 must damp old LH chord when new LH chord attacks");
+
+  api.stopPlayback();
+  api.setHands("one");
+  api.setPiano("gig");
+  api.resetAudio();
 }
 
 console.log("cadence ok:", bpms.length, "tunes with bpm");

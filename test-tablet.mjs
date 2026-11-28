@@ -13,4 +13,6 @@ assert.ok(html.includes("min-height:44px"), "44px touch targets (Apple HIG) requ
 assert.ok(/input\{font-size:16px;?\}/.test(html), "16px input stops iPad focus auto-zoom");
 assert.ok(html.includes("grid-template-columns:repeat(3,1fr)") && html.includes("grid-template-columns:repeat(4,1fr)"), "tablet grid columns missing");
 assert.ok(html.includes("max-width:920px") || html.includes("max-width:980px"), "focus view must not stretch full-bleed on tablets");
+assert.ok(html.includes('id="handSeg"') && html.includes(".seg button,.pill,.ghost,.roundbtn{min-height:44px;}"), "#handSeg buttons must inherit 44px touch targets");
+assert.ok(html.includes(".nline.twohands .ncols{display:flex; flex-wrap:wrap;"), "two-hand onset columns must wrap cleanly on mobile/tablet");
 console.log("tablet ok");
