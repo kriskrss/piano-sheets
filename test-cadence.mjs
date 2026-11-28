@@ -1080,11 +1080,9 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES (56 complete tunes pass strict bar-sum checks)
+// Bar-sum validation across TUNES (61 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
-  "countonme","flowers","itsy","leanonme","peaches","pinkpanther",
-  "riverflowsinyou","showyourself","someonelikeyou","wearethechampions",
-  "whatawonderfulworld"
+  "itsy","leanonme","pinkpanther","showyourself","someonelikeyou","whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1099,20 +1097,32 @@ for (const t of api.TUNES) {
   barValidatedCount++;
   const barBeats = t.meter[0] * (4 / t.meter[1]);
   const pickup = t.pickup || 0;
-  let total = 0, hasComplementaryEnd = false;
+  let total = 0, hasComplementaryEnd = false, pickupCarriedToEnd = false;
+  const isMultiple = (v, m) => {
+    const r = ((v % m) + m) % m;
+    return r < 1e-4 || Math.abs(r - m) < 1e-4;
+  };
   t.casio.lines.forEach((line, li) => {
     const toks = line[0].split(/\s+/).filter(x => x && x !== "|" && x !== "-");
     const sum = toks.reduce((a, x) => a + api.tokenBeats(x), 0);
     total += sum;
     const expectedBar = (t.barMeters && t.barMeters[li]) || barBeats;
     if (li === 0 && pickup > 0) {
-      assert.ok(Math.abs((sum - pickup) % expectedBar) < 1e-4 || Math.abs(((sum - pickup) % expectedBar) - expectedBar) < 1e-4,
-        `${t.id} line 0 (${sum}) minus pickup (${pickup}) not multiple of ${expectedBar}`);
-    } else if (li === t.casio.lines.length - 1 && pickup > 0 && Math.abs(((sum + pickup) % expectedBar)) < 1e-4) {
+      if (isMultiple(sum - pickup, expectedBar)) {
+        // standard barline-aligned pickup on line 0
+      } else if (t.casio.lines.length > 1 && sum > 0 && isMultiple(sum, expectedBar)) {
+        // phrase/anacrusis-aligned lines: pickup offset carries uniformly across line breaks to final line
+        pickupCarriedToEnd = true;
+      } else {
+        assert.fail(`${t.id} line 0 (${sum}) minus pickup (${pickup}) not multiple of ${expectedBar}`);
+      }
+    } else if (li === t.casio.lines.length - 1 && pickup > 0 && pickupCarriedToEnd) {
+      assert.ok(sum > 0 && isMultiple(sum - pickup, expectedBar),
+        `${t.id} final line ${li} (${sum}) minus carried pickup (${pickup}) not multiple of ${expectedBar}`);
+    } else if (li === t.casio.lines.length - 1 && pickup > 0 && isMultiple(sum + pickup, expectedBar)) {
       hasComplementaryEnd = true;
     } else {
-      const rem = sum % expectedBar;
-      assert.ok(sum > 0 && (rem < 1e-4 || Math.abs(rem - expectedBar) < 1e-4),
+      assert.ok(sum > 0 && isMultiple(sum, expectedBar),
         `${t.id} line ${li} sum ${sum} not multiple of ${expectedBar}`);
     }
   });
@@ -1124,10 +1134,10 @@ for (const t of api.TUNES) {
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
 }
-assert.equal(barValidatedCount, 56, "expected 56 bar-sum validated tunes");
+assert.equal(barValidatedCount, 61, "expected 61 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
-for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno"]) {
+for (const tid of ["bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions"]) {
   const t = api.TUNES.find(x => x.id === tid);
   const seq = api.buildSequence(t.casio, "casio");
   assert.ok(seq.some(e => e.kind === "rest"), `${tid} must contain restored rest tokens`);
