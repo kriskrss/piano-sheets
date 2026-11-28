@@ -876,23 +876,34 @@ function ensureAudio(){
   if(audioCtx.state==="suspended") audioCtx.resume();
   return true;
 }
-let activeStepVoice = null;
-function dampStepVoice(){
-  if(!activeStepVoice || !audioCtx) return;
-  try{
-    const { g, osc, osc2, oscBell, hammerSrc } = activeStepVoice;
-    const now = audioCtx.currentTime;
-    if(g.gain.cancelScheduledValues) g.gain.cancelScheduledValues(now);
-    g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.4), now);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
-    const stopAt = now + 0.025;
-    tryStopNode(osc, stopAt);
-    tryStopNode(osc2, stopAt);
-    tryStopNode(oscBell, stopAt);
-    tryStopNode(hammerSrc, stopAt);
-  }catch(e){}
-  activeStepVoice = null;
+let activeStepVoices = { rh: [], lh: [] };
+let stepHandEndBeat = { rh: -1, lh: -1 };
+function dampHandVoices(which){
+  if(!audioCtx){
+    if(!which || which === "all") activeStepVoices = { rh: [], lh: [] };
+    else activeStepVoices[which] = [];
+    return;
+  }
+  const hands = (!which || which === "all") ? ["rh", "lh"] : [which];
+  const now = audioCtx.currentTime;
+  const stopAt = now + 0.025;
+  hands.forEach(h=>{
+    (activeStepVoices[h] || []).forEach(v=>{
+      try{
+        const { g, osc, osc2, oscBell, hammerSrc } = v;
+        if(g.gain.cancelScheduledValues) g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.4), now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.02);
+        tryStopNode(osc, stopAt);
+        tryStopNode(osc2, stopAt);
+        tryStopNode(oscBell, stopAt);
+        tryStopNode(hammerSrc, stopAt);
+      }catch(e){}
+    });
+    activeStepVoices[h] = [];
+  });
 }
+function dampStepVoice(){ dampHandVoices("all"); }
 function playToneAt(midi, when, slotSec, opts){
   const o = opts || {};
   const inst = o.inst || piano || "gig";
@@ -1029,8 +1040,10 @@ function setTempo(bpm){
 }
 function tempoBpm(){ return currentBpm; }
 function stopPlayback(){
+  const wasPlaying = playing;
   playbackTimers.forEach(clearTimeout); playbackTimers = [];
-  dampStepVoice();
+  dampHandVoices("all");
+  stepHandEndBeat = { rh: -1, lh: -1 };
   if(audioCtx && scheduledVoices.length){
     const now = audioCtx.currentTime;
     if(songBus && songBus.gain.cancelScheduledValues){
@@ -1049,11 +1062,121 @@ function stopPlayback(){
     scheduledVoices = [];
   }
   playing = false;
+  if(wasPlaying && currentTwoHandTimeline){
+    clearNoteHighlights();
+    restoreTwoHandKbStart(currentTwoHandTimeline);
+  }
   const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
 }
 function playableSeq(){ return currentSeq.filter(n=>n.kind==="note" && !n.tiedContinuation); }
 function clearNoteHighlights(){
-  document.querySelectorAll("#fNotes .tok[data-seq]").forEach(s=>s.classList.remove("cur","done"));
+  document.querySelectorAll("#fNotes .tok[data-seq]").forEach(s=>s.classList.remove("cur","holding","done"));
+  document.querySelectorAll("#fNotes .hold-trail").forEach(s=>s.classList.remove("lh-on","rh-on"));
+}
+function setKeyLabel(keyEl, text){
+  if(!keyEl) return;
+  const kids = Array.from(keyEl.children || []);
+  let lab = kids.find(c => c.classList && c.classList.contains("lab"));
+  if(!text){
+    if(lab) lab.textContent = "";
+    return;
+  }
+  if(!lab){
+    lab = document.createElement("div");
+    lab.className = "lab";
+    keyEl.appendChild(lab);
+  }
+  lab.textContent = text;
+}
+function restoreTwoHandKbStart(tl){
+  const keys = Array.from(document.querySelectorAll("#fKb [data-midi]"));
+  if(!keys.length || !tl) return;
+  const byMidi = new Map();
+  keys.forEach(el=>{
+    el.classList.remove("lh-start","rh-start","lh-cur","lh-hold","rh-cur","rh-hold");
+    const m = el.dataset.midi;
+    byMidi.set(m, el);
+    setKeyLabel(el, m === "60" ? "C4" : "");
+  });
+  const firstLh = tl.lhSeq.find(e => e.kind === "note" && !e.tiedContinuation);
+  const firstRh = tl.rhSeq.find(e => e.kind === "note" && !e.tiedContinuation);
+  if(firstLh && firstLh.midis){
+    firstLh.midis.forEach((m, idx)=>{
+      const el = byMidi.get(String(m));
+      if(!el) return;
+      el.classList.add("lh-start");
+      if(idx === 0) setKeyLabel(el, m === 60 ? "C4\u00b7L" : "L");
+    });
+  }
+  if(firstRh && firstRh.midis){
+    firstRh.midis.forEach((m, idx)=>{
+      const el = byMidi.get(String(m));
+      if(!el) return;
+      el.classList.add("rh-start");
+      if(idx === 0) setKeyLabel(el, m === 60 ? (el.classList.contains("lh-start") ? "C4\u00b7LR" : "C4\u00b7R") : (el.classList.contains("lh-start") ? "L\u00b7R" : "R"));
+    });
+  }
+}
+function paintTwoHandKb(slice){
+  const keys = Array.from(document.querySelectorAll("#fKb [data-midi]"));
+  if(!keys.length || !slice) return;
+  const byMidi = new Map();
+  keys.forEach(el=>{
+    el.classList.remove("lh-start","rh-start","lh-cur","lh-hold","rh-cur","rh-hold");
+    const m = el.dataset.midi;
+    byMidi.set(m, el);
+    setKeyLabel(el, m === "60" ? "C4" : "");
+  });
+  const lhEv = slice.lhAttack || slice.lhActive;
+  const lhCls = slice.lhAttack ? "lh-cur" : (slice.lhActive ? "lh-hold" : null);
+  if(lhEv && lhCls && lhEv.midis){
+    lhEv.midis.forEach(m=>{
+      const el = byMidi.get(String(m));
+      if(el) el.classList.add(lhCls);
+    });
+  }
+  const rhEv = slice.rhAttack || slice.rhActive;
+  const rhCls = slice.rhAttack ? "rh-cur" : (slice.rhActive ? "rh-hold" : null);
+  if(rhEv && rhCls && rhEv.midis){
+    rhEv.midis.forEach(m=>{
+      const el = byMidi.get(String(m));
+      if(el) el.classList.add(rhCls);
+    });
+  }
+}
+function paintTwoHandSlice(tl, slice, opts){
+  const EPS = 1e-4;
+  const updateHand = (seq, attack, spanEv, active, clsOn) => {
+    seq.forEach(ev=>{
+      const isCur = ev === attack;
+      const isHold = !isCur && !!active && (ev === spanEv || ev === active);
+      const isDone = !isCur && !isHold && ev.endBeat <= slice.beat + EPS;
+      if(ev.el){
+        ev.el.classList.toggle("cur", isCur);
+        ev.el.classList.toggle("holding", isHold);
+        ev.el.classList.toggle("done", isDone);
+      }
+      if(ev.trailEls){
+        ev.trailEls.forEach(tr=>{
+          const on = !!(active && ev === active && tr.beat <= slice.beat + EPS);
+          tr.el.classList.toggle(clsOn, on);
+        });
+      }
+    });
+  };
+  updateHand(tl.rhSeq, slice.rhAttack, slice.rhSpanEv, slice.rhActive, "rh-on");
+  updateHand(tl.lhSeq, slice.lhAttack, slice.lhSpanEv, slice.lhActive, "lh-on");
+  paintTwoHandKb(slice);
+  if(opts && opts.scroll){
+    const anchor = (slice.rhAttack && slice.rhAttack.el) || (slice.lhAttack && slice.lhAttack.el) || (slice.rhEvent && slice.rhEvent.el) || (slice.lhEvent && slice.lhEvent.el);
+    if(anchor && anchor.closest){
+      const lineEl = anchor.closest(".nline");
+      if(lineEl && lineEl !== opts.lastLineEl){
+        anchor.scrollIntoView({block:"nearest", behavior:"smooth"});
+        opts.onLineEl(lineEl);
+      }
+    }
+  }
 }
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1211,10 +1334,65 @@ function buildTwoHandTimeline(tune, twoHands){
 }
 function playTune(){
   if(playing){ stopPlayback(); return; }
+  const tune = TUNES.find(x => x.id === currentId) || { meter: [4, 4] };
+  const twoHandsMode = isTwoHands(tune);
+  if(twoHandsMode){
+    const tl = currentTwoHandTimeline || buildTwoHandTimeline(tune, tune.casio.twoHands);
+    currentTwoHandTimeline = tl;
+    if(!tl.slices.length || !ensureAudio()) return;
+    follow = false; updateFollowUI(); clearNoteHighlights();
+    playing = true; $("#playBtn").textContent = "Stop";
+    const leadSec = 0.06, t0 = audioCtx.currentTime + leadSec;
+    let lastLineEl = null;
+    tl.slices.forEach((slice, si)=>{
+      const baseAt = tl.beatToSec(slice.beat);
+      const seedMidi = (slice.rhAttack && slice.rhAttack.midi) || (slice.lhAttack && slice.lhAttack.midi) || 60;
+      const h = Math.sin((si + 1) * 12.9898 + seedMidi * 78.233) * 43758.5453;
+      const jitter = (si === 0 || (!slice.rhAttack && !slice.lhAttack)) ? 0 : ((h - Math.floor(h)) * 2 - 1) * 0.004;
+      const at = Math.max(0, baseAt + jitter);
+      if(slice.lhAttack){
+        const ev = slice.lhAttack, n = ev.midis.length;
+        const slotSec = tl.beatToSec(ev.holdEndBeat) - baseAt;
+        const velPitch = ev.vel * LH_VEL_SCALE / Math.pow(n, 0.35);
+        ev.midis.forEach((m, k)=>{
+          playToneAt(m, t0 + at + k * 0.008, slotSec, {
+            inst: "casio", vel: velPitch, legato: ev.legato, detuneBias: ev.detuneBias
+          });
+        });
+      }
+      if(slice.rhAttack){
+        const ev = slice.rhAttack;
+        const slotSec = tl.beatToSec(ev.holdEndBeat) - baseAt;
+        const rhRoll = slice.lhAttack ? 0.004 : 0;
+        playToneAt(ev.midi, t0 + at + rhRoll, slotSec, {
+          inst: "casio", vel: ev.vel, legato: ev.legato, detuneBias: ev.detuneBias
+        });
+      }
+      playbackTimers.push(setTimeout(()=>{
+        paintTwoHandSlice(tl, slice, {
+          scroll: true,
+          lastLineEl,
+          onLineEl(el){ lastLineEl = el; }
+        });
+      }, (at + leadSec) * 1000));
+    });
+    playbackTimers.push(setTimeout(()=>{
+      playbackTimers = [];
+      playing = false;
+      noteIdx = -1;
+      clearNoteHighlights();
+      restoreTwoHandKbStart(tl);
+      const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
+      if(audioCtx){
+        const now = audioCtx.currentTime;
+        scheduledVoices = scheduledVoices.filter(v => v.stopTime > now);
+      }
+    }, (tl.beatToSec(tl.totalBeats) + leadSec) * 1000 + 180));
+    return;
+  }
   if(!currentSeq.length || !ensureAudio()) return;
   follow = false; updateFollowUI(); clearNoteHighlights();
   playing = true; $("#playBtn").textContent = "Stop";
-  const tune = TUNES.find(x => x.id === currentId) || { meter: [4, 4] };
   computeNoteExpressiveness(tune, currentSeq);
   const isLegacyUnmetered = !!(tune.id && LEGACY_UNMETERED.has(tune.id));
   const beatSec = 60 / tempoBpm(), leadSec = 0.06, t0 = audioCtx.currentTime + leadSec;
@@ -1520,6 +1698,18 @@ function updateFollowUI(){
   if(follow) paintNotes();
 }
 function paintNotes(){
+  if(currentTwoHandTimeline){
+    const ps = currentTwoHandTimeline.playableSlices;
+    const slice = noteIdx >= 0 ? ps[noteIdx] : null;
+    if(slice){
+      paintTwoHandSlice(currentTwoHandTimeline, slice, { scroll: true, lastLineEl: null, onLineEl(){} });
+    } else {
+      clearNoteHighlights();
+      restoreTwoHandKbStart(currentTwoHandTimeline);
+    }
+    $("#nextNoteBtn").textContent = noteIdx >= ps.length - 1 ? "Done - tap to restart" : "Next step";
+    return;
+  }
   const spans = noteSpans();
   spans.forEach((s,i)=>{
     s.classList.toggle("cur", i===noteIdx);
@@ -1529,7 +1719,49 @@ function paintNotes(){
   if(cur) cur.scrollIntoView({block:"nearest", behavior:"smooth"});
   $("#nextNoteBtn").textContent = noteIdx >= spans.length-1 ? "Done - tap to restart" : "Next note";
 }
+function triggerTwoHandStepAudio(slice){
+  if(!slice || !ensureAudio()) return;
+  const beatSec = 60 / tempoBpm();
+  const now = audioCtx.currentTime + 0.02;
+  if(slice.lhAttack){
+    dampHandVoices("lh");
+    const ev = slice.lhAttack, n = ev.midis.length;
+    const velPitch = 0.85 * LH_VEL_SCALE / Math.pow(n, 0.35);
+    ev.midis.forEach((m, k)=>{
+      activeStepVoices.lh.push(playToneAt(m, now + k * 0.008, ev.totalBeats * beatSec, { inst: "casio", vel: velPitch, legato: false }));
+    });
+    stepHandEndBeat.lh = ev.holdEndBeat;
+  } else if(!slice.lhActive || slice.beat >= stepHandEndBeat.lh - 1e-4){
+    dampHandVoices("lh");
+    stepHandEndBeat.lh = -1;
+  }
+  if(slice.rhAttack){
+    dampHandVoices("rh");
+    const ev = slice.rhAttack;
+    const rhRoll = slice.lhAttack ? 0.004 : 0;
+    activeStepVoices.rh.push(playToneAt(ev.midi, now + rhRoll, ev.totalBeats * beatSec, { inst: "casio", vel: 0.85, legato: false }));
+    stepHandEndBeat.rh = ev.holdEndBeat;
+  } else if(!slice.rhActive || slice.beat >= stepHandEndBeat.rh - 1e-4){
+    dampHandVoices("rh");
+    stepHandEndBeat.rh = -1;
+  }
+}
 function stepNote(){
+  if(currentTwoHandTimeline){
+    const ps = currentTwoHandTimeline.playableSlices;
+    if(noteIdx >= ps.length - 1){
+      noteIdx = -1;
+      dampHandVoices("all");
+      stepHandEndBeat = { rh: -1, lh: -1 };
+    } else {
+      noteIdx++;
+    }
+    paintNotes();
+    if(follow && noteIdx >= 0){
+      triggerTwoHandStepAudio(ps[noteIdx]);
+    }
+    return;
+  }
   const spans = noteSpans(), pseq = playableSeq();
   if(noteIdx >= spans.length-1){ noteIdx = -1; }
   else noteIdx++;
@@ -1538,16 +1770,36 @@ function stepNote(){
      is heard as a hold and a half-beat as quick. */
   const n = pseq[noteIdx];
   if(follow && n && ensureAudio()){
-    dampStepVoice();
-    activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false });
+    dampHandVoices("all");
+    activeStepVoices.rh = [playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false })];
   }
 }
 $("#playBtn").addEventListener("click", playTune);
 $("#tempoRange").addEventListener("input", e=>{ setTempo(parseInt(e.target.value,10) || 100); if(playing) stopPlayback(); });
-$("#followBtn").addEventListener("click", ()=>{ stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0; updateFollowUI(); const n = playableSeq()[0]; if(n && ensureAudio()){ dampStepVoice(); activeStepVoice = playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false }); } });
+$("#followBtn").addEventListener("click", ()=>{
+  stopPlayback(); clearNoteHighlights(); follow = true; noteIdx = 0;
+  stepHandEndBeat = { rh: -1, lh: -1 };
+  updateFollowUI();
+  if(currentTwoHandTimeline){
+    const s0 = currentTwoHandTimeline.playableSlices[0];
+    if(s0) triggerTwoHandStepAudio(s0);
+    return;
+  }
+  const n = playableSeq()[0];
+  if(n && ensureAudio()){
+    dampHandVoices("all");
+    activeStepVoices.rh = [playToneAt(n.midi, audioCtx.currentTime + 0.02, n.totalBeats * (60/tempoBpm()), { inst: piano, vel: 0.85, legato: false })];
+  }
+});
 $("#nextNoteBtn").addEventListener("click", stepNote);
-$("#resetBtn").addEventListener("click", ()=>{ follow = false; noteIdx = -1;
-  clearNoteHighlights(); updateFollowUI(); });
+$("#resetBtn").addEventListener("click", ()=>{
+  dampHandVoices("all");
+  stepHandEndBeat = { rh: -1, lh: -1 };
+  follow = false; noteIdx = -1;
+  clearNoteHighlights();
+  if(currentTwoHandTimeline) restoreTwoHandKbStart(currentTwoHandTimeline);
+  updateFollowUI();
+});
 $("#fNotes").addEventListener("click", ()=>{ if(follow) stepNote(); });
 function closeFocus(){
   stopPlayback();
