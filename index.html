@@ -82,6 +82,7 @@
   }
   .cardtitle{font-size:14px; font-weight:600; line-height:1.25; margin:0 0 2px;}
   .cardsub{color:var(--mist); font-size:12px; margin:0;}
+  .flagchip{display:inline-block; font-size:11px; font-weight:600; color:#7a4b00; background:#ffe1a8; border-radius:999px; padding:2px 8px; margin:4px 0 0;}
   .empty{color:var(--mist); padding:24px 0; text-align:center;}
   /* ---------- focus view ---------- */
   #focus{
@@ -240,6 +241,7 @@
   </div>
   <div class="fgroup" id="fGroup"></div>
   <h2 id="fName"></h2>
+  <p id="fFlag" class="flagchip" hidden>Rhythm check pending</p>
   <div class="startbox" id="fStart"></div>
   <a class="ytlink" id="fYt" href="#" target="_blank" rel="noopener" style="display:none">&#9654; Watch the tutorial on YouTube</a>
   <div class="kbwrap">
@@ -276,6 +278,9 @@
            from casio with @key pins (1-15) and octave hints where needed.
 */
 const GROUPS = ["Movie themes","Pop favorites","Games & TV themes","Classics","Worship","Toddler rhymes - Set 1","Toddler rhymes - Set 2"];
+/* Tunes whose rhythm (rests) is not yet fully verified against the sheet source.
+   Shown with a "Rhythm check pending" chip. Remove an id once its rests are verified. */
+const RHYTHM_CHECK_PENDING = new Set(["itsy","leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"]);
 const TUNES = [
 { id:"interstellar", title:"Interstellar - Main Theme", group:"Movie themes", glyph:"&#9834;", bpm:72, yt:"https://www.youtube.com/watch?v=OQeUvNHR0Ac", meter:[4,4],
   tip:"The whole piece is this one pattern repeating and getting bigger. Play it a second time through a little stronger.",
@@ -960,6 +965,11 @@ function renderHome(filter){
         "<p class='cardtitle'></p><p class='cardsub'></p>";
       card.querySelector(".cardtitle").textContent = t.title;
       card.querySelector(".cardsub").textContent = firstNoteLabel(t) + " - " + PIANO_NAMES[piano];
+      if(RHYTHM_CHECK_PENDING.has(t.id)){
+        const fc = document.createElement("p");
+        fc.className = "flagchip"; fc.textContent = "Rhythm check pending";
+        card.appendChild(fc);
+      }
       card.addEventListener("click", ()=> openTune(t.id));
       grid.appendChild(card);
     });
@@ -1011,6 +1021,7 @@ function renderFocus(scroll){
   $("#fTitle").textContent = t.title;
   $("#fGroup").textContent = t.group + " - " + PIANO_NAMES[piano];
   $("#fName").textContent = t.title;
+  $("#fFlag").hidden = !RHYTHM_CHECK_PENDING.has(t.id);
   $("#fStart").textContent = v.start;
   buildKeyboard(v);
   currentSeq = buildSequence(v);
