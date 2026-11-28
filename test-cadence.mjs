@@ -286,20 +286,39 @@ const lig = gigTokens("letitgo");
 assert.deepEqual(lig.slice(0, 3).map(n => n.pitch.replace(/[+-]/g, "")), ["F#","G","B"]);
 assert.deepEqual(lig.slice(0, 3).map(n => n.beats), [0.5,0.5,0.5]);
 
-// Itsy Bitsy Spider: rhythm from the engraved PianoLessons4Children
-// C-major score (4/4, lyrics underlaid): the whole tune lilts in
-// dotted-eighth + sixteenth pairs (0.75/0.25); "spi" and phrase peaks
-// are quarters, phrase-final notes carry the score's quarter rest in
-// their hold. Gig line totals: 8.5 / 8 / 8 / 7 / 4.75.
+// Itsy Bitsy Spider: Singing Bell 6/8 F-major reading (pickup + 16 bars,
+// transposed down a perfect fourth to C major with G3 pickup; bar 13
+// phrase-parallel inference from bar 1; final bar tied 1.5+1.0=2.5
+// completing the 0.5 pickup; no rests).
+const itsTune = api.TUNES.find(t => t.id === "itsy");
+assert.deepEqual(itsTune.meter, [6, 8]);
+assert.equal(itsTune.pickup, 0.5);
+assert.equal(itsTune.bpm, 112);
+assert.equal(itsTune.yt, "https://www.youtube.com/watch?v=OFLNVniyx_s");
+assert.equal(itsTune.casio.lines.length, 17);
+assert.ok(!api.RHYTHM_CHECK_PENDING.has("itsy"), "itsy must be removed from RHYTHM_CHECK_PENDING");
 const its = gigTokens("itsy");
 const itsAll = gigAllTokens("itsy");
-assert.deepEqual(its.slice(0, 12).map(n => n.beats),
-  [0.5,0.75,0.25,0.75,0.25,1,0.75,0.25,0.75,0.25,1,1]);
-assert.deepEqual(itsAll.slice(11, 13).map(n => [n.kind, n.beats]), [["note", 1], ["rest", 1]]);
-for (const [a, b, tot] of [[0,13,8.5],[13,24,8],[24,35,8],[35,46,7],[46,50,4.75]]) {
-  const total = itsAll.slice(a, b).reduce((sum, n) => sum + n.beats, 0);
-  assert.ok(Math.abs(total - tot) < 0.01, `itsy gig tokens ${a}-${b} must total ${tot}, got ${total}`);
-}
+const itsCasioAll = casioAllTokens("itsy");
+assert.ok(itsAll.every(n => n.kind === "note"), "itsy gig must have no rests");
+assert.ok(itsCasioAll.every(n => n.kind === "note"), "itsy casio must have no rests");
+assert.deepEqual(itsCasioAll.slice(0, 5).map(n => n.pitch), ["G3","C4","E4","C4","E4"]);
+assert.deepEqual(itsCasioAll.slice(0, 5).map(n => n.beats), [0.5,1,0.5,1,0.5]);
+assert.deepEqual(its.slice(0, 5).map(n => n.pitch.replace(/[+-]/g, "")), ["G","C","E","C","E"]);
+assert.deepEqual(its.slice(0, 5).map(n => n.beats), [0.5,1,0.5,1,0.5]);
+assert.equal(itsTune.casio.lines[12][0], "D4:1.5 G3:1 G3:0.5");
+const itsTail = itsCasioAll.slice(-2);
+assert.equal(itsTail[0].pitch, "C4");
+assert.equal(itsTail[0].beats, 1.5);
+assert.equal(itsTail[0].tied, true);
+assert.equal(itsTail[1].pitch, "C4");
+assert.equal(itsTail[1].beats, 1);
+const itsSeq = api.buildSequence(itsTune.casio, "casio");
+assert.equal(itsSeq.slice(-2)[0].totalBeats, 2.5);
+assert.equal(itsSeq.slice(-2)[1].tiedContinuation, true);
+const itsLineSums = itsTune.casio.lines.map(l => l[0].split(/\s+/).filter(Boolean).reduce((s, x) => s + api.tokenBeats(x), 0));
+assert.deepEqual(itsLineSums, [0.5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2.5]);
+assert.equal(itsLineSums.reduce((a, b) => a + b, 0), 48);
 
 // Married Life (Up): Betacustic beginner sheet (Musicnotes MN0233977,
 // F major, 3/4, q=100), main strain bars 5-10: dotted-half F opening,
@@ -1100,9 +1119,9 @@ assert.equal(api.tokenBeats("R"), 1);
   assert.ok(restFirstLabel === "Starts on C4" || restFirstLabel === "Starts on C");
 }
 
-// Bar-sum validation across TUNES (62 complete tunes pass strict bar-sum checks)
+// Bar-sum validation across TUNES (63 complete tunes pass strict bar-sum checks)
 const NEEDS_SOURCE_CHECK = new Set([
-  "itsy","leanonme","showyourself","someonelikeyou","whatawonderfulworld"
+  "leanonme","showyourself","someonelikeyou","whatawonderfulworld"
 ]);
 const LEGACY_UNMETERED = new Set([
   "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
@@ -1139,7 +1158,7 @@ for (const t of api.TUNES) {
     } else if (li === t.casio.lines.length - 1 && pickup > 0 && pickupCarriedToEnd) {
       assert.ok(sum > 0 && isMultiple(sum - pickup, expectedBar),
         `${t.id} final line ${li} (${sum}) minus carried pickup (${pickup}) not multiple of ${expectedBar}`);
-    } else if (li === t.casio.lines.length - 1 && pickup > 0 && isMultiple(sum + pickup, expectedBar)) {
+    } else if (li === t.casio.lines.length - 1 && pickup > 0 && sum > 0 && isMultiple(sum + pickup, expectedBar)) {
       hasComplementaryEnd = true;
     } else {
       assert.ok(sum > 0 && isMultiple(sum, expectedBar),
@@ -1154,7 +1173,7 @@ for (const t of api.TUNES) {
       `${t.id} total ${total} (pickup ${pickup}, compEnd=${hasComplementaryEnd}) not multiple of ${barBeats}`);
   }
 }
-assert.equal(barValidatedCount, 62, "expected 62 bar-sum validated tunes");
+assert.equal(barValidatedCount, 63, "expected 63 bar-sum validated tunes");
 
 // Verify restored rests & ties on key tunes
 for (const tid of ["pinkpanther","bloodymary","allofme","miraculous","oceans","faded","beautifulinwhite","rewritethestars","bohemianrhapsody","hereiamtoworship","toxic","tryeverything","gravityfalls","fnaf","amongusdrip","amilliondreams","athousandyears","hallelujah","allisfound","overtherainbow","shallow","perfect","howfarillgo","hesapirate","awholenewworld","canthelpfalling","diewithasmile","flymetothemoon","letitgo","megalovania","dancemonkey","godzilla","marriedlife","myheartwillgoon","wedonttalkaboutbruno","countonme","flowers","peaches","riverflowsinyou","wearethechampions","someonelikeyou","whatawonderfulworld"]) {
@@ -1525,7 +1544,7 @@ assert.ok(!/gig:\{/.test(html), "hand-authored gig variants must be removed");
   assert.deepEqual(pilotTunes.map(t => t.id).sort(), EXPECTED_PILOT, "only the 8 Phase 1 pilot tunes may have twoHands data");
   assert.deepEqual(
     Array.from(api.RHYTHM_CHECK_PENDING).sort(),
-    ["itsy","leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"],
+    ["leanonme","pinkpanther","rememberme","showyourself","someonelikeyou","whatawonderfulworld"],
     "RHYTHM_CHECK_PENDING set must stay unchanged"
   );
 
