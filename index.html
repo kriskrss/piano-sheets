@@ -669,13 +669,13 @@ function buildSequence(v, inst){
   const seq = [];
   const cands = gigCandidates();
   let prev = null, prevEv = null, lastTieHead = null;
-  v.lines.forEach(line=>{
+  v.lines.forEach((line, lineIdx)=>{
     line[0].split(/\s+/).forEach(tok=>{
       if(!tok || tok==="|" || tok==="-") return;
       const beats = tokenBeats(tok);
       let ev;
       if(isRestToken(tok)){
-        ev = {kind:"rest", pitch:"R", beats, midi:null, tied:false, tiedContinuation:false, totalBeats:beats, key:null};
+        ev = {kind:"rest", pitch:"R", beats, midi:null, tied:false, tiedContinuation:false, totalBeats:beats, key:null, lineIdx};
         lastTieHead = null;
       } else {
         const pitch = tokenPitch(tok), key = tokenKey(tok);
@@ -700,7 +700,7 @@ function buildSequence(v, inst){
         }
         const tied = isTiedToken(tok);
         const tiedContinuation = !!(prevEv && prevEv.kind==="note" && prevEv.tied && prevEv.midi===midi);
-        ev = {kind:"note", pitch, beats, midi, tied, tiedContinuation, totalBeats:beats, key};
+        ev = {kind:"note", pitch, beats, midi, tied, tiedContinuation, totalBeats:beats, key, lineIdx};
         if(tiedContinuation && lastTieHead){ lastTieHead.totalBeats += beats; }
         else { lastTieHead = tied ? ev : null; }
         prev = midi;
@@ -746,6 +746,25 @@ function buildHammerBuffer(ctx){
     lp = lp * 0.55 + n * 0.45;
     const t = i / sr;
     d[i] = lp * Math.min(1, t / 0.002) * Math.exp(-t / 0.010);
+  }
+  return buf;
+}
+function buildRoomImpulse(ctx){
+  const sr = ctx.sampleRate || 48000, dur = 0.85, len = Math.floor(sr * dur);
+  const buf = ctx.createBuffer(2, len, sr);
+  for(let ch = 0; ch < 2; ch++){
+    const d = buf.getChannelData(ch);
+    const taps = [[0.011 + ch * 0.0015, 0.32], [0.023 - ch * 0.0012, -0.22], [0.037 + ch * 0.002, 0.15]];
+    for(const [ts, amp] of taps){ const idx = Math.floor(ts * sr); if(idx < len) d[idx] += amp; }
+    let lp = 0;
+    for(let i = Math.floor(0.008 * sr); i < len; i++){
+      const t = i / sr;
+      const s = Math.sin((i + ch * 997) * 19.19 + 4.13) * 29437.71;
+      const white = (s - Math.floor(s)) * 2 - 1;
+      const damp = 0.25 + 0.55 * Math.exp(-t / 0.28);
+      lp = lp * (1 - damp) + white * damp;
+      d[i] += lp * 0.26 * Math.exp(-t / 0.24);
+    }
   }
   return buf;
 }
@@ -821,12 +840,22 @@ function ensureAudio(){
       comp.threshold.value = -6; comp.knee.value = 8; comp.ratio.value = 6;
       comp.attack.value = 0.003; comp.release.value = 0.12;
       songBus.connect(hpf); hpf.connect(eq); eq.connect(comp); comp.connect(masterGain);
+      if(audioCtx.createConvolver && audioCtx.createBuffer){
+        revSendNode = audioCtx.createGain();
+        revSendNode.gain.value = (VOICE_PRESETS[piano] || VOICE_PRESETS.casio).revSend;
+        const conv = audioCtx.createConvolver();
+        conv.buffer = buildRoomImpulse(audioCtx);
+        const revHpf = audioCtx.createBiquadFilter();
+        revHpf.type = "highpass"; revHpf.frequency.value = 220;
+        songBus.connect(revSendNode); revSendNode.connect(conv); conv.connect(revHpf); revHpf.connect(masterEqNode);
+      }
     } else {
       songBus.connect(masterGain);
     }
     if(hasNativePlaybackSession) masterGain.connect(audioCtx.destination);
     else routeToSpeaker();
   }
+  if(revSendNode) revSendNode.gain.value = (VOICE_PRESETS[piano] || VOICE_PRESETS.casio).revSend;
   if(!hasNativePlaybackSession && speakerEl && speakerEl.paused){
     try{ const p = speakerEl.play(); if(p && p.catch) p.catch(function(){}); }catch(e){}
   }
@@ -1012,18 +1041,90 @@ function playableSeq(){ return currentSeq.filter(n=>n.kind==="note" && !n.tiedCo
 function clearNoteHighlights(){
   document.querySelectorAll("#fNotes .tok[data-seq]").forEach(s=>s.classList.remove("cur","done"));
 }
+const LEGACY_UNMETERED = new Set([
+  "interstellar","mary","oldmac","londonbridge","rowboat","wheels",
+  "sleeping","lassie","threeblind","farmer","hickory","barenecessities","hakunamatata"
+]);
+function computeNoteExpressiveness(tune, seq){
+  const meter = (tune && tune.meter) || [4, 4];
+  const barBeats = meter[0] * (4 / meter[1]);
+  let pos = -((tune && tune.pickup) || 0);
+  seq.forEach(ev=>{
+    const bLen = (tune && tune.barMeters && tune.barMeters[ev.lineIdx]) || barBeats;
+    ev._barBeat = pos;
+    ev._barLen = bLen;
+    pos += ev.beats;
+    while(pos >= bLen - 1e-4) pos -= bLen;
+  });
+
+  const playableIndices = [];
+  seq.forEach((ev, idx)=>{ if(ev.kind === "note" && !ev.tiedContinuation) playableIndices.push(idx); });
+
+  let prevMidi = null, repeatParity = 0;
+  playableIndices.forEach((seqIdx, k)=>{
+    const ev = seq[seqIdx];
+    let afterIdx = seqIdx + 1;
+    while(seq[afterIdx] && seq[afterIdx].tiedContinuation) afterIdx++;
+    const nextSeqEv = seq[afterIdx] || null;
+    const nextPlayable = k + 1 < playableIndices.length ? seq[playableIndices[k + 1]] : null;
+
+    const bLen = ev._barLen || barBeats;
+    const posInBar = ((ev._barBeat % bLen) + bLen) % bLen;
+    const onBeat = Math.abs(posInBar - Math.round(posInBar)) < 0.02;
+    let vel = 0.72;
+    if(posInBar < 0.02 || Math.abs(posInBar - bLen) < 0.02) vel = 0.90;
+    else if(meter[1] === 8 && Math.abs(posInBar % 1.5) < 0.02) vel = 0.82;
+    else if((meter[0] === 4 || (meter[0] === 2 && meter[1] === 2)) && Math.abs(posInBar - 2) < 0.02) vel = 0.81;
+    else if(onBeat) vel = 0.76;
+    else vel = 0.67;
+
+    if(ev.totalBeats >= 2) vel += 0.05;
+    if(prevMidi !== null && ev.midi !== prevMidi){
+      vel += Math.max(-0.02, Math.min(0.04, ((ev.midi - prevMidi) / 12) * 0.04));
+    }
+
+    let detuneBias = 0;
+    if(ev.midi === prevMidi){
+      repeatParity ^= 1;
+      vel += repeatParity ? -0.06 : 0.02;
+      detuneBias = repeatParity ? -1.4 : 1.4;
+    } else {
+      repeatParity = 0;
+    }
+
+    const immediateNextIsNote = nextSeqEv && nextSeqEv.kind === "note";
+    const samePitchNext = nextPlayable && nextPlayable.midi === ev.midi;
+    const legacyLineBreak = tune && LEGACY_UNMETERED.has(tune.id) && nextSeqEv && nextSeqEv.lineIdx !== ev.lineIdx;
+    ev.vel = Math.max(0.52, Math.min(0.98, vel));
+    ev.legato = !!(immediateNextIsNote && !samePitchNext && !legacyLineBreak && ev.totalBeats >= 0.45);
+    ev.detuneBias = detuneBias;
+    ev.isCadenceTail = k >= playableIndices.length - 2 && playableIndices.length >= 6;
+    for(let ti = seqIdx + 1; ti < afterIdx; ti++) seq[ti].isCadenceTail = ev.isCadenceTail;
+
+    prevMidi = ev.midi;
+  });
+}
 function playTune(){
   if(playing){ stopPlayback(); return; }
   if(!currentSeq.length || !ensureAudio()) return;
   follow = false; updateFollowUI(); clearNoteHighlights();
   playing = true; $("#playBtn").textContent = "Stop";
-  const beatSec = 60 / tempoBpm(), t0 = audioCtx.currentTime + 0.08;
+  const tune = TUNES.find(x => x.id === currentId) || { meter: [4, 4] };
+  computeNoteExpressiveness(tune, currentSeq);
+  const isLegacyUnmetered = !!(tune.id && LEGACY_UNMETERED.has(tune.id));
+  const beatSec = 60 / tempoBpm(), leadSec = 0.06, t0 = audioCtx.currentTime + leadSec;
   let offset = 0, lastLineEl = null;
   currentSeq.forEach((n,i)=>{
+    if(isLegacyUnmetered && i > 0 && n.lineIdx !== currentSeq[i - 1].lineIdx) offset += 0.030;
+    const h = Math.sin((i + 1) * 12.9898 + (n.midi || 60) * 78.233) * 43758.5453;
+    const jitter = (i === 0 || n.kind !== "note" || n.tiedContinuation) ? 0 : ((h - Math.floor(h)) * 2 - 1) * 0.004;
+    const ritMult = n.isCadenceTail ? 1.08 : 1.0;
+    const at = Math.max(0, offset + jitter);
     if(n.kind==="note" && !n.tiedContinuation){
-      playToneAt(n.midi, t0 + offset, n.totalBeats * beatSec);
+      playToneAt(n.midi, t0 + at, n.totalBeats * beatSec * ritMult, {
+        inst: piano, vel: n.vel, legato: n.legato, detuneBias: n.detuneBias
+      });
     }
-    const at = offset;
     playbackTimers.push(setTimeout(()=>{
       currentSeq.forEach((ev,j)=>{
         if(!ev.el) return;
@@ -1037,10 +1138,20 @@ function playTune(){
           lastLineEl = lineEl;
         }
       }
-    }, at*1000));
-    offset += n.beats * beatSec;
+    }, (at + leadSec) * 1000));
+    offset += n.beats * beatSec * ritMult;
   });
-  playbackTimers.push(setTimeout(()=>{ stopPlayback(); noteIdx = -1; clearNoteHighlights(); }, offset*1000 + 60));
+  playbackTimers.push(setTimeout(()=>{
+    playbackTimers = [];
+    playing = false;
+    noteIdx = -1;
+    clearNoteHighlights();
+    const b = $("#playBtn"); if(b) b.innerHTML = "&#9654; Play tune";
+    if(audioCtx){
+      const now = audioCtx.currentTime;
+      scheduledVoices = scheduledVoices.filter(v => v.stopTime > now);
+    }
+  }, (offset + leadSec) * 1000 + 180));
 }
 
 const $ = s => document.querySelector(s);
@@ -1142,6 +1253,7 @@ function syncSegs(){
 function setPiano(p){
   stopPlayback();
   piano = p; localStorage.setItem("pianoSheetsPiano", p);
+  if(revSendNode) revSendNode.gain.value = (VOICE_PRESETS[piano] || VOICE_PRESETS.casio).revSend;
   syncSegs(); renderHome($("#searchInput").value||"");
   if(currentId) renderFocus(false);
 }
